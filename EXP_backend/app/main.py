@@ -1,10 +1,15 @@
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi import FastAPI, Depends
 from app.auth import get_current_user
 from app.db import get_db
 import psycopg2
+from app.routes.expenses import router as expenses_router
+from app.routes.income import router as income_router
+from app.routes.analytics import router as analytics_router
 
 app = FastAPI()
+
 
 app.add_middleware(
     CORSMiddleware,
@@ -21,6 +26,9 @@ app.add_middleware(
 @app.get("/")
 def root():
     return {"status": "Backend running"}
+app.include_router(expenses_router)
+app.include_router(income_router)
+app.include_router(analytics_router)
 
 @app.get("/protected")
 def protected_route(user=Depends(get_current_user)):
@@ -117,3 +125,5 @@ def get_income(
         (user["sub"],),
     )
     return cur.fetchall()
+
+app.include_router(analytics_router)
