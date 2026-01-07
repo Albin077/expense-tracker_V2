@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Home</title>
+</head>
+<body>
+
+<button onclick="goLogin()">🔐 Login</button>
+
+<h2>Add Expense</h2>
+<input id="edate" type="date">
+<input id="ecat" placeholder="Category">
+<input id="eamt" type="number" placeholder="Amount">
+<input id="ecom" placeholder="Comment">
+<button onclick="addExpense()">Add Expense</button>
+
+<h3>Expenses</h3>
+<table border="1">
+  <thead>
+    <tr>
+      <th>Date</th><th>Category</th><th>Amount</th><th>Comment</th>
+    </tr>
+  </thead>
+  <tbody id="expenseTable"></tbody>
+</table>
+
+<hr>
+
+<h2>Add Income</h2>
+<input id="idate" type="date">
+<input id="isrc" placeholder="Source">
+<input id="iamt" type="number" placeholder="Amount">
+<input id="icom" placeholder="Comment">
+<button onclick="addIncome()">Add Income</button>
+
+<h3>Income</h3>
+<table border="1">
+  <thead>
+    <tr>
+      <th>Date</th><th>Source</th><th>Amount</th><th>Comment</th>
+    </tr>
+  </thead>
+  <tbody id="incomeTable"></tbody>
+</table>
+
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<script src="../js/home.js"></script>
+
+</body>
+</html>
