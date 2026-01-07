@@ -1,15 +1,8 @@
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from app.auth import get_current_user
+from app.db import get_db
 import psycopg2
-import os
-from dotenv import load_dotenv
-import psycopg2
-
-
-load_dotenv()
-
-conn = psycopg2.connect(os.getenv("SUPABASE_DB_URL"))
 
 app = FastAPI()
 
@@ -22,7 +15,7 @@ app.add_middleware(
 )
 
 # ------------------------------
-# EXISTING ROUTES (UNCHANGED)
+# HEALTH CHECK
 # ------------------------------
 
 @app.get("/")
@@ -42,7 +35,11 @@ def protected_route(user=Depends(get_current_user)):
 # ------------------------------
 
 @app.post("/expenses")
-def add_expense(data: dict, user=Depends(get_current_user)):
+def add_expense(
+    data: dict,
+    user=Depends(get_current_user),
+    conn=Depends(get_db),
+):
     cur = conn.cursor()
     cur.execute(
         """
@@ -61,7 +58,10 @@ def add_expense(data: dict, user=Depends(get_current_user)):
     return {"status": "expense added"}
 
 @app.get("/expenses")
-def get_expenses(user=Depends(get_current_user)):
+def get_expenses(
+    user=Depends(get_current_user),
+    conn=Depends(get_db),
+):
     cur = conn.cursor()
     cur.execute(
         """
@@ -79,7 +79,11 @@ def get_expenses(user=Depends(get_current_user)):
 # ------------------------------
 
 @app.post("/income")
-def add_income(data: dict, user=Depends(get_current_user)):
+def add_income(
+    data: dict,
+    user=Depends(get_current_user),
+    conn=Depends(get_db),
+):
     cur = conn.cursor()
     cur.execute(
         """
@@ -98,7 +102,10 @@ def add_income(data: dict, user=Depends(get_current_user)):
     return {"status": "income added"}
 
 @app.get("/income")
-def get_income(user=Depends(get_current_user)):
+def get_income(
+    user=Depends(get_current_user),
+    conn=Depends(get_db),
+):
     cur = conn.cursor()
     cur.execute(
         """
