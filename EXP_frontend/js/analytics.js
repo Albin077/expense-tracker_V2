@@ -1,38 +1,18 @@
-const SUPABASE_URL = "https://dekmfqyokdfvtbpdghwb.supabase.co";
-const SUPABASE_ANON_KEY = "YOUR_ANON_KEY";
-
-const supabaseClient = supabase.createClient(
-  SUPABASE_URL,
-  SUPABASE_ANON_KEY
-);
+// js/analytics.js
+const sb = window.supabaseClient;
 
 async function loadAnalytics() {
-  const { data } = await supabaseClient.auth.getSession();
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) return location.href = "login.html";
 
-  // 🔒 Not logged in → go to login
-  if (!data.session) {
-    window.location.href = "login.html";
-    return;
-  }
-
-  const token = data.session.access_token;
-
-  const res = await fetch("http://localhost:8000/analytics/summary", {
+  const res = await fetch("http://127.0.0.1:8000/analytics/summary", {
     headers: {
-      Authorization: `Bearer ${token}`,
-    },
+      Authorization: `Bearer ${session.access_token}`
+    }
   });
 
-  // 🔒 Token invalid / expired
-  if (res.status === 401) {
-    window.location.href = "login.html";
-    return;
-  }
-
-  const result = await res.json();
-  console.log(result);
-
-  // TODO: render charts (later)
+  const data = await res.json();
+  console.log("Analytics:", data);
 }
 
 loadAnalytics();

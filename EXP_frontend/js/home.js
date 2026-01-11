@@ -1,115 +1,100 @@
-const SUPABASE_URL = "https://dekmfqyokdfvtbpdghwb.supabase.co";
-const SUPABASE_ANON_KEY = "YOUR_ANON_KEY";
+// js/home.js
+const sb = window.supabaseClient;
 
-const supabaseClient = supabase.createClient(
-  SUPABASE_URL,
-  SUPABASE_ANON_KEY
-);
-
-// ------------------------------
-// AUTH CHECK
-// ------------------------------
+/* ---------- AUTH CHECK ---------- */
 async function requireLogin() {
-  const { data } = await supabaseClient.auth.getSession();
-  if (!data.session) {
-    window.location.href = "login.html";
+  const { data: { session } } = await sb.auth.getSession();
+
+  if (!session) {
+    location.href = "login.html";
+    return null;
   }
-  return data.session.access_token;
+  return session;
 }
 
-// ------------------------------
-function goLogin() {
-  window.location.href = "login.html";
-}
-
-// ------------------------------
+/* ---------- ADD EXPENSE ---------- */
 async function addExpense() {
-  const token = await requireLogin();
+  const session = await requireLogin();
+  if (!session) return;
 
-  await fetch("http://localhost:8000/expenses", {
+  const expense_date = document.getElementById("expDate").value;
+  const category     = document.getElementById("expCategory").value;
+  const amount       = document.getElementById("expAmount").value;
+  const comment      = document.getElementById("expComment").value;
+
+  if (!expense_date || !category || !amount) {
+    alert("Please fill all required expense fields");
+    return;
+  }
+
+  const res = await fetch("http://127.0.0.1:8000/expenses", {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
+      Authorization: `Bearer ${session.access_token}`
     },
     body: JSON.stringify({
-      expense_date: edate.value,
-      category: ecat.value,
-      amount: eamt.value,
-      comment: ecom.value,
-    }),
+      expense_date,
+      category,
+      amount,
+      comment
+    })
   });
 
-  loadExpenses();
+  if (!res.ok) {
+    alert("Failed to add expense");
+    return;
+  }
+
+  document.getElementById("expDate").value = "";
+  document.getElementById("expCategory").value = "";
+  document.getElementById("expAmount").value = "";
+  document.getElementById("expComment").value = "";
+
+  alert("Expense added ✅");
 }
 
-// ------------------------------
-async function loadExpenses() {
-  const token = await requireLogin();
-
-  const res = await fetch("http://localhost:8000/expenses", {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-
-  const data = await res.json();
-
-  expenseTable.innerHTML = data
-    .map(
-      (r) =>
-        `<tr>
-          <td>${r[0]}</td>
-          <td>${r[1]}</td>
-          <td>${r[2]}</td>
-          <td>${r[3] || ""}</td>
-        </tr>`
-    )
-    .join("");
-}
-
-// ------------------------------
+/* ---------- ADD INCOME ---------- */
 async function addIncome() {
-  const token = await requireLogin();
+  const session = await requireLogin();
+  if (!session) return;
 
-  await fetch("http://localhost:8000/income", {
+  const income_date = document.getElementById("incDate").value;
+  const source      = document.getElementById("incSource").value;
+  const amount      = document.getElementById("incAmount").value;
+  const comment     = document.getElementById("incComment").value;
+
+  if (!income_date || !source || !amount) {
+    alert("Please fill all required income fields");
+    return;
+  }
+
+  const res = await fetch("http://127.0.0.1:8000/income", {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
+      Authorization: `Bearer ${session.access_token}`
     },
     body: JSON.stringify({
-      income_date: idate.value,
-      source: isrc.value,
-      amount: iamt.value,
-      comment: icom.value,
-    }),
+      income_date,
+      source,
+      amount,
+      comment
+    })
   });
 
-  loadIncome();
+  if (!res.ok) {
+    alert("Failed to add income");
+    return;
+  }
+
+  document.getElementById("incDate").value = "";
+  document.getElementById("incSource").value = "";
+  document.getElementById("incAmount").value = "";
+  document.getElementById("incComment").value = "";
+
+  alert("Income added ✅");
 }
 
-// ------------------------------
-async function loadIncome() {
-  const token = await requireLogin();
-
-  const res = await fetch("http://localhost:8000/income", {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-
-  const data = await res.json();
-
-  incomeTable.innerHTML = data
-    .map(
-      (r) =>
-        `<tr>
-          <td>${r[0]}</td>
-          <td>${r[1]}</td>
-          <td>${r[2]}</td>
-          <td>${r[3] || ""}</td>
-        </tr>`
-    )
-    .join("");
-}
-
-// ------------------------------
-loadExpenses();
-loadIncome();
+/* ---------- RUN ON LOAD ---------- */
+requireLogin();
