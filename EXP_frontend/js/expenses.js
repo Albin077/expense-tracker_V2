@@ -14,17 +14,22 @@ async function requireLogin() {
 }
 
 /* ---------------------------
-   LOAD EXPENSES
+   LOAD EXPENSES (WITH FILTERS)
 ---------------------------- */
-async function loadExpenses() {
+async function loadExpenses(params = {}) {
   const session = await requireLogin();
   if (!session) return;
 
-  const res = await fetch("http://127.0.0.1:8000/expenses", {
-    headers: {
-      Authorization: `Bearer ${session.access_token}`,
-    },
-  });
+  const query = new URLSearchParams(params).toString();
+
+  const res = await fetch(
+    `http://127.0.0.1:8000/expenses?${query}`,
+    {
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+      },
+    }
+  );
 
   const rows = await res.json();
   const tbody = document.getElementById("expenseBody");
@@ -82,6 +87,24 @@ async function loadExpenses() {
   `;
 
   tbody.appendChild(addRow);
+}
+
+/* ---------------------------
+   APPLY FILTERS
+---------------------------- */
+function applyFilters() {
+  const params = {
+    sort_by: document.getElementById("sortBy").value,
+    order: document.getElementById("order").value,
+  };
+
+  const month = document.getElementById("month").value;
+  const keyword = document.getElementById("keyword").value;
+
+  if (month) params.month = month;
+  if (keyword) params.keyword = keyword;
+
+  loadExpenses(params);
 }
 
 /* ---------------------------
