@@ -28,20 +28,20 @@ async function loadIncome() {
 
     tr.innerHTML = `
       <td>
-        <input type="date" value="${r[1] ?? ""}">
+        <input type="date" id="date-${r[0]}" value="${r[1] ?? ""}">
       </td>
       <td>
-        <input id="src-${r[4]}" value="${r[2] ?? ""}">
+        <input id="src-${r[0]}" value="${r[2] ?? ""}">
       </td>
       <td>
-        <input type="number" id="amt-${r[3]}" value="${r[3] ?? ""}">
+        <input type="number" id="amt-${r[0]}" value="${r[3] ?? ""}">
       </td>
       <td>
-        <input id="com-${r[4]}" value="${r[4] ?? ""}">
+        <input id="com-${r[0]}" value="${r[4] ?? ""}">
       </td>
       <td>
-        <button onclick="updateIncome(${r[5]})">💾</button>
-        <button onclick="deleteIncome(${r[5]})">🗑</button>
+        <button onclick="updateIncome(${r[0]})">💾</button>
+        <button onclick="deleteIncome(${r[0]})">🗑</button>
       </td>
     `;
 
@@ -60,6 +60,7 @@ async function updateIncome(id) {
       Authorization: `Bearer ${session.access_token}`
     },
     body: JSON.stringify({
+      income_date: document.getElementById(`date-${id}`).value,
       source: document.getElementById(`src-${id}`).value,
       amount: document.getElementById(`amt-${id}`).value,
       comment: document.getElementById(`com-${id}`).value

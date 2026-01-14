@@ -27,23 +27,23 @@ async function loadExpenses() {
   rows.forEach(r => {
     /*
       r[0] = id
-      r[3] = amount
-      r[2] = category
-      r[4] = comment
       r[1] = expense_date
+      r[2] = category
+      r[3] = amount
+      r[4] = comment
     */
 
     const tr = document.createElement("tr");
 
     tr.innerHTML = `
       <td>
-        <input type="date" value="${r[1] ?? ""}">
+        <input type="date" id="date-${r[0]}" value="${r[1] ?? ""}">
       </td>
       <td>
         <input id="cat-${r[0]}" value="${r[2] ?? ""}">
       </td>
       <td>
-        <input type="number" id="amt-${r[3]}" value="${r[3] ?? ""}">
+        <input type="number" id="amt-${r[0]}" value="${r[3] ?? ""}">
       </td>
       <td>
         <input id="com-${r[0]}" value="${r[4] ?? ""}">
@@ -69,6 +69,7 @@ async function updateExpense(id) {
       Authorization: `Bearer ${session.access_token}`
     },
     body: JSON.stringify({
+      expense_date: document.getElementById(`date-${id}`).value,
       category: document.getElementById(`cat-${id}`).value,
       amount: document.getElementById(`amt-${id}`).value,
       comment: document.getElementById(`com-${id}`).value
