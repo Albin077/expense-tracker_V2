@@ -1,9 +1,13 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from app.auth import get_current_user
 from app.db import get_db
 
 router = APIRouter()
 
+ALLOWED_SORT_FIELDS = {
+    "date": "income_date",
+    "amount": "amount",
+}
 
 # ------------------------------
 # ADD INCOME
@@ -29,25 +33,44 @@ def add_income(data: dict, user=Depends(get_current_user), db=Depends(get_db)):
 
 
 # ------------------------------
-# GET INCOME (WITH ID for editing)
+# GET INCOME (SEARCH / SORT / FILTER)
 # ------------------------------
 @router.get("/income")
-def get_income(user=Depends(get_current_user), db=Depends(get_db)):
-    cur = db.cursor()
-    cur.execute(
-        """
+def get_income(
+    user=Depends(get_current_user),
+    db=Depends(get_db),
+    search: str | None = Query(default=None),
+    sort_by: str = Query(default="date"),   # date | amount
+    order: str = Query(default="desc"),     # asc | desc
+    month: int | None = Query(default=None) # 1–12
+):
+    sort_column = ALLOWED_SORT_FIELDS.get(sort_by, "income_date")
+    order_sql = "ASC" if order.lower() == "asc" else "DESC"
+
+    query = """
         SELECT id, income_date, source, amount, comment
         FROM income
         WHERE user_id = %s
-        ORDER BY income_date DESC
-        """,
-        (user["sub"],),
-    )
+    """
+    params = [user["sub"]]
+
+    if search:
+        query += " AND (source ILIKE %s OR comment ILIKE %s)"
+        params.extend([f"%{search}%", f"%{search}%"])
+
+    if month:
+        query += " AND EXTRACT(MONTH FROM income_date) = %s"
+        params.append(month)
+
+    query += f" ORDER BY {sort_column} {order_sql}"
+
+    cur = db.cursor()
+    cur.execute(query, tuple(params))
     return cur.fetchall()
 
 
 # ------------------------------
-# UPDATE INCOME (INLINE EDIT)
+# UPDATE INCOME
 # ------------------------------
 @router.put("/income/{income_id}")
 def update_income(
@@ -90,10 +113,7 @@ def delete_income(
 ):
     cur = db.cursor()
     cur.execute(
-        """
-        DELETE FROM income
-        WHERE id = %s AND user_id = %s
-        """,
+        "DELETE FROM income WHERE id = %s AND user_id = %s",
         (income_id, user["sub"]),
     )
     db.commit()

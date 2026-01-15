@@ -1,5 +1,10 @@
-// js/income.js
 const sb = window.supabaseClient;
+
+let incomeRows = [];
+let sortBy = "date";
+let order = "desc";
+let monthFilter = "";
+let sortPanelVisible = false;
 
 /* ---------------------------
    AUTH GUARD
@@ -20,87 +25,91 @@ async function loadIncome() {
   const session = await requireLogin();
   if (!session) return;
 
-  const res = await fetch("http://127.0.0.1:8000/income", {
+  const keyword = document.getElementById("incomeSearch").value;
+
+  let url = `http://127.0.0.1:8000/income?sort_by=${sortBy}&order=${order}`;
+
+  if (keyword) url += `&search=${encodeURIComponent(keyword)}`;
+  if (monthFilter) url += `&month=${monthFilter}`;
+
+  const res = await fetch(url, {
     headers: {
       Authorization: `Bearer ${session.access_token}`,
     },
   });
 
-  const rows = await res.json();
+  incomeRows = await res.json();
+  renderIncome();
+}
+
+/* ---------------------------
+   SORT PANEL TOGGLE
+---------------------------- */
+function toggleSortPanel() {
+  sortPanelVisible = !sortPanelVisible;
+  document.getElementById("sortPanel").style.display =
+    sortPanelVisible ? "block" : "none";
+}
+
+/* ---------------------------
+   SORT / FILTER
+---------------------------- */
+function setSort(field) {
+  sortBy = field;
+  loadIncome();
+}
+
+function toggleOrder() {
+  order = order === "asc" ? "desc" : "asc";
+  loadIncome();
+}
+
+function setMonth(val) {
+  monthFilter = val;
+  loadIncome();
+}
+
+/* ---------------------------
+   RENDER
+---------------------------- */
+function renderIncome() {
   const tbody = document.getElementById("incomeBody");
   tbody.innerHTML = "";
 
-  /* ---------------------------
-     EXISTING INCOME ROWS
-  ---------------------------- */
-  rows.forEach((r) => {
-    // r = [id, income_date, source, amount, comment]
+  incomeRows.forEach((r) => {
     const tr = document.createElement("tr");
 
     tr.innerHTML = `
-      <td>
-        <input type="date" id="date-${r[0]}" value="${r[1] ?? ""}">
-      </td>
-      <td>
-        <input id="src-${r[0]}" value="${r[2] ?? ""}">
-      </td>
-      <td>
-        <input type="number" id="amt-${r[0]}" value="${r[3] ?? ""}">
-      </td>
-      <td>
-        <input id="com-${r[0]}" value="${r[4] ?? ""}">
-      </td>
+      <td><input type="date" id="date-${r[0]}" value="${r[1] ?? ""}"></td>
+      <td><input id="src-${r[0]}" value="${r[2] ?? ""}"></td>
+      <td><input type="number" id="amt-${r[0]}" value="${r[3] ?? ""}"></td>
+      <td><input id="com-${r[0]}" value="${r[4] ?? ""}"></td>
       <td>
         <button onclick="updateIncome(${r[0]})">💾</button>
         <button onclick="deleteIncome(${r[0]})">🗑</button>
       </td>
     `;
-
     tbody.appendChild(tr);
   });
 
-  /* ---------------------------
-     INLINE ADD INCOME ROW
-  ---------------------------- */
+  // Add row
   const addRow = document.createElement("tr");
-
   addRow.innerHTML = `
-    <td>
-      <input type="date" id="new-inc-date">
-    </td>
-    <td>
-      <input id="new-inc-src" placeholder="Source">
-    </td>
-    <td>
-      <input type="number" id="new-inc-amt" placeholder="Amount">
-    </td>
-    <td>
-      <input id="new-inc-com" placeholder="Comment">
-    </td>
-    <td>
-      <button onclick="addIncome()">➕</button>
-    </td>
+    <td><input type="date" id="new-inc-date"></td>
+    <td><input id="new-inc-src"></td>
+    <td><input type="number" id="new-inc-amt"></td>
+    <td><input id="new-inc-com"></td>
+    <td><button onclick="addIncome()">➕</button></td>
   `;
-
   tbody.appendChild(addRow);
 }
 
 /* ---------------------------
-   ADD INCOME
+   ADD / UPDATE / DELETE
 ---------------------------- */
 async function addIncome() {
   const session = await requireLogin();
   if (!session) return;
-
-  const date = document.getElementById("new-inc-date").value;
-  const src = document.getElementById("new-inc-src").value;
-  const amt = document.getElementById("new-inc-amt").value;
-  const com = document.getElementById("new-inc-com").value;
-
-  if (!date || !src || !amt) {
-    alert("Date, Source & Amount are required");
-    return;
-  }
 
   await fetch("http://127.0.0.1:8000/income", {
     method: "POST",
@@ -109,19 +118,16 @@ async function addIncome() {
       Authorization: `Bearer ${session.access_token}`,
     },
     body: JSON.stringify({
-      income_date: date,
-      source: src,
-      amount: Number(amt),
-      comment: com,
+      income_date: document.getElementById("new-inc-date").value,
+      source: document.getElementById("new-inc-src").value,
+      amount: Number(document.getElementById("new-inc-amt").value),
+      comment: document.getElementById("new-inc-com").value,
     }),
   });
 
   loadIncome();
 }
 
-/* ---------------------------
-   UPDATE INCOME
----------------------------- */
 async function updateIncome(id) {
   const session = await requireLogin();
   if (!session) return;
@@ -139,13 +145,8 @@ async function updateIncome(id) {
       comment: document.getElementById(`com-${id}`).value,
     }),
   });
-
-  alert("Income updated ✅");
 }
 
-/* ---------------------------
-   DELETE INCOME
----------------------------- */
 async function deleteIncome(id) {
   if (!confirm("Delete income?")) return;
 
@@ -162,7 +163,4 @@ async function deleteIncome(id) {
   loadIncome();
 }
 
-/* ---------------------------
-   INIT
----------------------------- */
 loadIncome();
