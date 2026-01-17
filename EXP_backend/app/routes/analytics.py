@@ -2,28 +2,28 @@ from fastapi import APIRouter, Depends, Query
 from datetime import date
 from app.auth import get_current_user
 from app.db import get_db
+from fastapi_cache.decorator import cache
 
 router = APIRouter(prefix="/analytics")
 
 
 # -------------------------------------------------
-# BASIC SUMMARY (DO NOT TOUCH – CORE KPI)
+# BASIC SUMMARY (CORE KPI)
 # -------------------------------------------------
 @router.get("/summary")
+@cache(expire=300)
 def analytics_summary(
     user=Depends(get_current_user),
     db=Depends(get_db),
 ):
     cur = db.cursor()
 
-    # Total Expense
     cur.execute(
         "SELECT COALESCE(SUM(amount), 0) FROM expenses WHERE user_id = %s",
         (user["sub"],),
     )
     total_expense = cur.fetchone()[0]
 
-    # Total Income
     cur.execute(
         "SELECT COALESCE(SUM(amount), 0) FROM income WHERE user_id = %s",
         (user["sub"],),
@@ -34,72 +34,53 @@ def analytics_summary(
         "total_expense": total_expense,
         "total_income": total_income,
         "balance": total_income - total_expense,
+        "status": "expense_exceeded"
+        if total_expense > total_income
+        else "healthy",
     }
 
 
 # -------------------------------------------------
-# KEYWORD-BASED EXPENSE ANALYTICS
-# (comment search + group by category)
+# KEYWORD SEARCH (EXPENSE COMMENTS)
 # -------------------------------------------------
 @router.get("/search")
 def analytics_search(
     keyword: str = Query(..., min_length=1),
-    from_date: date | None = Query(default=None),
-    to_date: date | None = Query(default=None),
-    month: int | None = Query(default=None),   # 1–12
-    year: int | None = Query(default=None),
+    from_date: date | None = None,
+    to_date: date | None = None,
     user=Depends(get_current_user),
     db=Depends(get_db),
 ):
     cur = db.cursor()
 
     query = """
-        SELECT
-            e.category_id,
-            COALESCE(SUM(e.amount), 0) AS total_amount
-        FROM expenses e
-        WHERE e.user_id = %s
-          AND e.comment ILIKE %s
+        SELECT category, COALESCE(SUM(amount), 0)
+        FROM expenses
+        WHERE user_id = %s
+          AND comment ILIKE %s
     """
-
     params = [user["sub"], f"%{keyword}%"]
 
-    # Date range filter
     if from_date and to_date:
-        query += " AND e.expense_date BETWEEN %s AND %s"
+        query += " AND expense_date >= %s AND expense_date < %s"
         params.extend([from_date, to_date])
 
-    # Month filter
-    if month:
-        query += " AND EXTRACT(MONTH FROM e.expense_date) = %s"
-        params.append(month)
-
-    # Year filter
-    if year:
-        query += " AND EXTRACT(YEAR FROM e.expense_date) = %s"
-        params.append(year)
-
     query += """
-        GROUP BY e.category_id
-        ORDER BY total_amount DESC
+        GROUP BY category
+        ORDER BY SUM(amount) DESC
     """
 
     cur.execute(query, tuple(params))
     rows = cur.fetchall()
 
-    return [
-        {
-            "category_id": r[0],
-            "total": r[1],
-        }
-        for r in rows
-    ]
+    return [{"category": c, "total": t} for c, t in rows]
 
 
 # -------------------------------------------------
-# MONTHLY REPORT (EXPENSE + INCOME)
+# MONTHLY ANALYTICS
 # -------------------------------------------------
 @router.get("/monthly")
+@cache(expire=300)
 def analytics_monthly(
     month: int = Query(..., ge=1, le=12),
     year: int = Query(...),
@@ -108,20 +89,23 @@ def analytics_monthly(
 ):
     cur = db.cursor()
 
+    start = date(year, month, 1)
+    end = date(year + 1, 1, 1) if month == 12 else date(year, month + 1, 1)
+
     # Expenses by category
     cur.execute(
         """
-        SELECT category_id, COALESCE(SUM(amount), 0)
+        SELECT category, SUM(amount)
         FROM expenses
         WHERE user_id = %s
-          AND EXTRACT(MONTH FROM expense_date) = %s
-          AND EXTRACT(YEAR FROM expense_date) = %s
-        GROUP BY category_id
+          AND expense_date >= %s
+          AND expense_date < %s
+        GROUP BY category
         ORDER BY SUM(amount) DESC
         """,
-        (user["sub"], month, year),
+        (user["sub"], start, end),
     )
-    expense_by_category = cur.fetchall()
+    expenses = cur.fetchall()
 
     # Total income
     cur.execute(
@@ -129,102 +113,107 @@ def analytics_monthly(
         SELECT COALESCE(SUM(amount), 0)
         FROM income
         WHERE user_id = %s
-          AND EXTRACT(MONTH FROM income_date) = %s
-          AND EXTRACT(YEAR FROM income_date) = %s
+          AND income_date >= %s
+          AND income_date < %s
         """,
-        (user["sub"], month, year),
+        (user["sub"], start, end),
     )
-    total_income = cur.fetchone()[0]
+    income = cur.fetchone()[0]
 
     return {
         "month": month,
         "year": year,
-        "total_income": total_income,
-        "expenses_by_category": [
-            {"category_id": r[0], "total": r[1]} for r in expense_by_category
-        ],
+        "total_income": income,
+        "expenses": [{"category": c, "total": t} for c, t in expenses],
     }
 
 
 # -------------------------------------------------
-# YEARLY INSIGHT
+# YEARLY ANALYTICS
 # -------------------------------------------------
 @router.get("/yearly")
+@cache(expire=300)
 def analytics_yearly(
-    year: int = Query(...),
+    year: int,
     user=Depends(get_current_user),
     db=Depends(get_db),
 ):
     cur = db.cursor()
+
+    start = date(year, 1, 1)
+    end = date(year + 1, 1, 1)
 
     cur.execute(
         """
         SELECT COALESCE(SUM(amount), 0)
         FROM expenses
         WHERE user_id = %s
-          AND EXTRACT(YEAR FROM expense_date) = %s
+          AND expense_date >= %s
+          AND expense_date < %s
         """,
-        (user["sub"], year),
+        (user["sub"], start, end),
     )
-    total_expense = cur.fetchone()[0]
+    expense = cur.fetchone()[0]
 
     cur.execute(
         """
         SELECT COALESCE(SUM(amount), 0)
         FROM income
         WHERE user_id = %s
-          AND EXTRACT(YEAR FROM income_date) = %s
+          AND income_date >= %s
+          AND income_date < %s
         """,
-        (user["sub"], year),
+        (user["sub"], start, end),
     )
-    total_income = cur.fetchone()[0]
+    income = cur.fetchone()[0]
 
     return {
         "year": year,
-        "total_income": total_income,
-        "total_expense": total_expense,
-        "balance": total_income - total_expense,
+        "total_income": income,
+        "total_expense": expense,
+        "balance": income - expense,
     }
 
 
 # -------------------------------------------------
-# TREND (MONTHLY INCOME VS EXPENSE)
+# MONTHLY TREND (FOR CHARTS)
 # -------------------------------------------------
 @router.get("/trend")
 def analytics_trend(
-    year: int = Query(...),
+    year: int,
     user=Depends(get_current_user),
     db=Depends(get_db),
 ):
     cur = db.cursor()
 
+    start = date(year, 1, 1)
+    end = date(year + 1, 1, 1)
+
     cur.execute(
         """
-        SELECT
-            EXTRACT(MONTH FROM expense_date) AS month,
-            SUM(amount)
+        SELECT EXTRACT(MONTH FROM expense_date)::int, SUM(amount)
         FROM expenses
         WHERE user_id = %s
-          AND EXTRACT(YEAR FROM expense_date) = %s
-        GROUP BY month
-        ORDER BY month
+          AND expense_date >= %s
+          AND expense_date < %s
+        GROUP BY 1
+        ORDER BY 1
         """,
-        (user["sub"], year),
+        (user["sub"], start, end),
     )
     expenses = cur.fetchall()
 
     cur.execute(
         """
-        SELECT
-            EXTRACT(MONTH FROM income_date) AS month,
-            SUM(amount)
+        SELECT EXTRACT(MONTH FROM income_date)::int, SUM(amount)
         FROM income
         WHERE user_id = %s
-          AND EXTRACT(YEAR FROM income_date) = %s
-        GROUP BY month
-        ORDER BY month
+          AND income_date >= %s
+          AND income_date < %s
+        GROUP BY 1
+        ORDER BY 1
         """,
-        (user["sub"], year),
+        (user["sub"], start, end),
     )
     income = cur.fetchall()
 
@@ -232,4 +221,205 @@ def analytics_trend(
         "year": year,
         "expenses": [{"month": m, "total": t} for m, t in expenses],
         "income": [{"month": m, "total": t} for m, t in income],
+    }
+
+
+# -------------------------------------------------
+# CATEGORY YEARLY TREND (PETROL ETC.)
+# -------------------------------------------------
+@router.get("/category-trend")
+def category_yearly_trend(
+    category: str,
+    year: int,
+    user=Depends(get_current_user),
+    db=Depends(get_db),
+):
+    cur = db.cursor()
+
+    start = date(year, 1, 1)
+    end = date(year + 1, 1, 1)
+
+    cur.execute(
+        """
+        SELECT EXTRACT(MONTH FROM expense_date)::int, SUM(amount)
+        FROM expenses
+        WHERE user_id = %s
+          AND category ILIKE %s
+          AND expense_date >= %s
+          AND expense_date < %s
+        GROUP BY 1
+        ORDER BY 1
+        """,
+        (user["sub"], category, start, end),
+    )
+    rows = cur.fetchall()
+
+    return {
+        "category": category,
+        "year": year,
+        "monthly": [{"month": m, "total": t} for m, t in rows],
+    }
+
+# =================================================
+# CHART CONTRACTS (DO NOT BREAK EXISTING APIs)
+# =================================================
+
+# 1️⃣ Monthly Income vs Expense (Chart-ready)
+@router.get("/chart/monthly-summary")
+def chart_monthly_summary(
+    month: int = Query(..., ge=1, le=12),
+    year: int = Query(...),
+    user=Depends(get_current_user),
+    db=Depends(get_db),
+):
+    cur = db.cursor()
+
+    start_date = date(year, month, 1)
+    end_date = date(year + 1, 1, 1) if month == 12 else date(year, month + 1, 1)
+
+    cur.execute(
+        """
+        SELECT COALESCE(SUM(amount),0)
+        FROM income
+        WHERE user_id=%s
+          AND income_date >= %s
+          AND income_date < %s
+        """,
+        (user["sub"], start_date, end_date),
+    )
+    income = cur.fetchone()[0]
+
+    cur.execute(
+        """
+        SELECT COALESCE(SUM(amount),0)
+        FROM expenses
+        WHERE user_id=%s
+          AND expense_date >= %s
+          AND expense_date < %s
+        """,
+        (user["sub"], start_date, end_date),
+    )
+    expense = cur.fetchone()[0]
+
+    return {
+        "labels": ["Income", "Expense"],
+        "data": [income, expense],
+        "insight": "Income exceeded expenses"
+        if income >= expense
+        else "Expenses exceeded income",
+    }
+
+
+# 2️⃣ Monthly Expense by Category (Pie chart)
+@router.get("/chart/monthly-expense-category")
+def chart_monthly_expense_category(
+    month: int = Query(..., ge=1, le=12),
+    year: int = Query(...),
+    user=Depends(get_current_user),
+    db=Depends(get_db),
+):
+    cur = db.cursor()
+
+    start_date = date(year, month, 1)
+    end_date = date(year + 1, 1, 1) if month == 12 else date(year, month + 1, 1)
+
+    cur.execute(
+        """
+        SELECT category, SUM(amount)
+        FROM expenses
+        WHERE user_id=%s
+          AND expense_date >= %s
+          AND expense_date < %s
+        GROUP BY category
+        ORDER BY SUM(amount) DESC
+        """,
+        (user["sub"], start_date, end_date),
+    )
+
+    rows = cur.fetchall()
+
+    return {
+        "labels": [r[0] for r in rows],
+        "data": [r[1] for r in rows],
+    }
+
+
+# 3️⃣ Yearly Trend (Income vs Expense line chart)
+@router.get("/chart/yearly-trend")
+def chart_yearly_trend(
+    year: int = Query(...),
+    user=Depends(get_current_user),
+    db=Depends(get_db),
+):
+    cur = db.cursor()
+
+    income = [0] * 12
+    expense = [0] * 12
+
+    cur.execute(
+        """
+        SELECT EXTRACT(MONTH FROM income_date)::int, SUM(amount)
+        FROM income
+        WHERE user_id=%s AND income_date >= %s AND income_date < %s
+        GROUP BY 1
+        """,
+        (user["sub"], date(year, 1, 1), date(year + 1, 1, 1)),
+    )
+    for m, t in cur.fetchall():
+        income[m - 1] = t
+
+    cur.execute(
+        """
+        SELECT EXTRACT(MONTH FROM expense_date)::int, SUM(amount)
+        FROM expenses
+        WHERE user_id=%s AND expense_date >= %s AND expense_date < %s
+        GROUP BY 1
+        """,
+        (user["sub"], date(year, 1, 1), date(year + 1, 1, 1)),
+    )
+    for m, t in cur.fetchall():
+        expense[m - 1] = t
+
+    return {
+        "labels": ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"],
+        "income": income,
+        "expense": expense,
+    }
+
+
+# 4️⃣ Category Trend (Search-based)
+@router.get("/chart/category-trend")
+def chart_category_trend(
+    keyword: str = Query(...),
+    year: int = Query(...),
+    user=Depends(get_current_user),
+    db=Depends(get_db),
+):
+    cur = db.cursor()
+    monthly = [0] * 12
+
+    cur.execute(
+        """
+        SELECT EXTRACT(MONTH FROM expense_date)::int, SUM(amount)
+        FROM expenses
+        WHERE user_id=%s
+          AND expense_date >= %s AND expense_date < %s
+          AND comment ILIKE %s
+        GROUP BY 1
+        """,
+        (
+            user["sub"],
+            date(year, 1, 1),
+            date(year + 1, 1, 1),
+            f"%{keyword}%",
+        ),
+    )
+
+    for m, t in cur.fetchall():
+        monthly[m - 1] = t
+
+    return {
+        "labels": ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"],
+        "data": monthly,
+        "peak_month": monthly.index(max(monthly)) + 1 if max(monthly) > 0 else None,
     }

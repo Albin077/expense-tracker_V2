@@ -1,5 +1,7 @@
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi_cache import FastAPICache
+from fastapi_cache.backends.inmemory import InMemoryBackend
 
 from app.auth import get_current_user
 from app.routes.expenses import router as expenses_router
@@ -7,6 +9,11 @@ from app.routes.income import router as income_router
 from app.routes.analytics import router as analytics_router
 
 app = FastAPI()
+
+
+@app.on_event("startup")
+async def startup():
+    FastAPICache.init(InMemoryBackend())
 
 # ------------------------------
 # CORS

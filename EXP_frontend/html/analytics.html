@@ -1,17 +1,78 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Analytics</title>
+  <meta charset="UTF-8">
+  <title>Analytics Dashboard</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <script src="/js/supabaseClient.js"></script>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f6f7fb;
+      padding: 20px;
+    }
+
+    .card {
+      background: #fff;
+      padding: 16px;
+      margin-bottom: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.1);
+    }
+
+    .controls {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+
+    select, input, button {
+      padding: 6px;
+    }
+  </style>
 </head>
+
 <body>
 
-<h2>Analytics</h2>
+<h2>📊 Analytics Dashboard</h2>
 
-<canvas id="barChart"></canvas>
-<canvas id="pieChart"></canvas>
+<!-- 1️⃣ Income vs Expense -->
+<div class="card">
+  <h3>Income vs Expense</h3>
+  <div class="controls">
+    <select id="ieMonth"></select>
+    <select id="ieYear"></select>
+    <button onclick="loadIncomeExpense()">Apply</button>
+  </div>
+  <canvas id="ieChart"></canvas>
+</div>
 
-<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-<script src="/js/supabaseClient.js"></script>
+<!-- 2️⃣ Expense by Category -->
+<div class="card">
+  <h3>Expense by Category</h3>
+  <div class="controls">
+    <select id="catMonth"></select>
+    <select id="catYear"></select>
+    <button onclick="loadCategory()">Apply</button>
+  </div>
+  <canvas id="categoryChart"></canvas>
+</div>
+
+<!-- 3️⃣ Keyword Trend -->
+<div class="card">
+  <h3>Keyword Spending Trend</h3>
+  <div class="controls">
+    <input id="keyword" placeholder="petrol / food">
+    <select id="keyYear"></select>
+    <button onclick="loadKeyword()">Apply</button>
+  </div>
+  <canvas id="keywordChart"></canvas>
+</div>
+
 <script src="/js/analytics.js"></script>
 </body>
 </html>
