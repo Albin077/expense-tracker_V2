@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Analytics Dashboard</title>
+  <title>Income vs Expense</title>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
@@ -16,62 +16,96 @@
     }
 
     .card {
-      background: #fff;
+      background: white;
       padding: 16px;
-      margin-bottom: 20px;
       border-radius: 8px;
       box-shadow: 0 2px 8px rgba(0,0,0,.1);
+      max-width: 900px;
+      margin: auto;
     }
 
     .controls {
       display: flex;
       gap: 10px;
       flex-wrap: wrap;
-      margin-bottom: 10px;
+      margin-bottom: 15px;
     }
 
-    select, input, button {
-      padding: 6px;
+    select, button {
+      padding: 6px 10px;
     }
   </style>
 </head>
 
 <body>
 
-<h2>📊 Analytics Dashboard</h2>
-
-<!-- 1️⃣ Income vs Expense -->
 <div class="card">
-  <h3>Income vs Expense</h3>
+  <h2>📊 Income vs Expense</h2>
+
   <div class="controls">
-    <select id="ieMonth"></select>
-    <select id="ieYear"></select>
-    <button onclick="loadIncomeExpense()">Apply</button>
+    <select id="yearSelect"></select>
+
+    <select id="rangeSelect">
+      <option value="12">Full Year</option>
+      <option value="6">Last 6 Months</option>
+      <option value="3">Last 3 Months</option>
+    </select>
+
+    <select id="typeSelect">
+      <option value="bar">Bar</option>
+      <option value="line">Line</option>
+    </select>
+
+    <button onclick="loadChart()">Apply</button>
   </div>
-  <canvas id="ieChart"></canvas>
+
+  <canvas id="incomeExpenseChart"></canvas>
 </div>
 
-<!-- 2️⃣ Expense by Category -->
-<div class="card">
-  <h3>Expense by Category</h3>
+<!-- ===============================
+     EXPENSE BY CATEGORY
+================================ -->
+<div class="card" style="margin-top:30px">
+  <h2>💸 Expense by Category</h2>
+
   <div class="controls">
-    <select id="catMonth"></select>
-    <select id="catYear"></select>
-    <button onclick="loadCategory()">Apply</button>
-  </div>
+  <select id="catYear"></select>
+
+  <select id="catMonth">
+    <option value="">All Months</option>
+    <option value="1">Jan</option>
+    <option value="2">Feb</option>
+    <option value="3">Mar</option>
+    <option value="4">Apr</option>
+    <option value="5">May</option>
+    <option value="6">Jun</option>
+    <option value="7">Jul</option>
+    <option value="8">Aug</option>
+    <option value="9">Sep</option>
+    <option value="10">Oct</option>
+    <option value="11">Nov</option>
+    <option value="12">Dec</option>
+  </select>
+
+  <select id="catRange">
+    <option value="12">Full Year</option>
+    <option value="6">Last 6 Months</option>
+    <option value="3">Last 3 Months</option>
+  </select>
+
+  <select id="catType">
+    <option value="pie">Pie</option>
+    <option value="bar">Bar</option>
+    <option value="doughnut">Doughnut</option>
+  </select>
+
+  <button onclick="loadCategoryChart()">Apply</button>
+</div>
+
+
   <canvas id="categoryChart"></canvas>
 </div>
 
-<!-- 3️⃣ Keyword Trend -->
-<div class="card">
-  <h3>Keyword Spending Trend</h3>
-  <div class="controls">
-    <input id="keyword" placeholder="petrol / food">
-    <select id="keyYear"></select>
-    <button onclick="loadKeyword()">Apply</button>
-  </div>
-  <canvas id="keywordChart"></canvas>
-</div>
 
 <script src="/js/analytics.js"></script>
 </body>
