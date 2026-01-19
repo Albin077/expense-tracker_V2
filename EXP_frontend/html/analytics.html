@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <link rel="stylesheet" href="../css/analytics.css">
   <meta charset="UTF-8">
   <title>Income vs Expense</title>
 
@@ -69,44 +70,83 @@
   <h2>💸 Expense by Category</h2>
 
   <div class="controls">
-  <select id="catYear"></select>
+    <input type="date" id="catFrom">
+    <input type="date" id="catTo">
 
-  <select id="catMonth">
-    <option value="">All Months</option>
-    <option value="1">Jan</option>
-    <option value="2">Feb</option>
-    <option value="3">Mar</option>
-    <option value="4">Apr</option>
-    <option value="5">May</option>
-    <option value="6">Jun</option>
-    <option value="7">Jul</option>
-    <option value="8">Aug</option>
-    <option value="9">Sep</option>
-    <option value="10">Oct</option>
-    <option value="11">Nov</option>
-    <option value="12">Dec</option>
-  </select>
+    <select id="catType">
+      <option value="pie">Pie</option>
+      <option value="bar">Bar</option>
+      <option value="doughnut">Doughnut</option>
+    </select>
 
-  <select id="catRange">
-    <option value="12">Full Year</option>
-    <option value="6">Last 6 Months</option>
-    <option value="3">Last 3 Months</option>
-  </select>
-
-  <select id="catType">
-    <option value="pie">Pie</option>
-    <option value="bar">Bar</option>
-    <option value="doughnut">Doughnut</option>
-  </select>
-
-  <button onclick="loadCategoryChart()">Apply</button>
-</div>
-
+    <button onclick="loadCategoryChart()">Apply</button>
+  </div>
 
   <canvas id="categoryChart"></canvas>
 </div>
 
 
+<!-- ===============================
+     KEYWORD SPENDING TREND
+================================ -->
+<div class="card" style="margin-top:30px">
+  <h2>🔍 Keyword Spending Trend</h2>
+
+  <div class="controls">
+    <input id="kwInput" placeholder="petrol / food / hospital">
+
+    <input type="date" id="kwFrom">
+    <input type="date" id="kwTo">
+
+    <select id="kwType">
+      <option value="bar">Bar</option>
+      <option value="line">Line</option>
+    </select>
+
+    <button onclick="loadKeywordRangeChart()">Apply</button>
+  </div>
+
+  <canvas id="keywordRangeChart"></canvas>
+</div>
+
+<!-- =========================
+     INSIGHTS PANEL
+========================= -->
+<section class="insights-panel">
+  <h2>Insights</h2>
+
+  <!-- Income vs Expense -->
+  <div class="insight-card">
+    <h3>Income vs Expense</h3>
+    <p id="incomeExpenseText"></p>
+  </div>
+
+  <!-- Spending Increase -->
+  <div class="insight-card">
+    <h3>Spending Increase</h3>
+    <p id="spendingIncreaseText"></p>
+  </div>
+
+  <!-- New Categories -->
+  <div class="insight-card">
+    <h3>New Categories</h3>
+    <p id="newCategoryText"></p>
+  </div>
+
+  <!-- Average Monthly Comparison -->
+  <div class="insight-card">
+    <h3>Average Monthly Expense vs Income</h3>
+    <table class="insight-table">
+      <thead>
+        <tr>
+          <th>Category</th>
+          <th>Avg Expense</th>
+          <th>% of Income</th>
+        </tr>
+      </thead>
+      <tbody id="avgExpenseTable"></tbody>
+    </table>
+  </div>
+</section>
+
 <script src="/js/analytics.js"></script>
-</body>
-</html>

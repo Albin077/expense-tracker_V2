@@ -1,0 +1,48 @@
+/* ========== INSIGHTS PANEL ========== */
+
+.insight-card {
+  background: linear-gradient(135deg, #0f0f0f, #1a1a1a);
+  border-radius: 14px;
+  padding: 18px 22px;
+  margin-bottom: 16px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.35);
+  color: #ffffff;
+}
+
+.insight-card h3,
+.insight-card h4 {
+  color: #e0e0e0;
+  margin-bottom: 10px;
+}
+
+.insight-card p {
+  color: #ffffff;
+  font-size: 15px;
+}
+
+.text-green {
+  color: #4caf50;
+  font-weight: 600;
+}
+
+.text-red {
+  color: #ff5252;
+  font-weight: 600;
+}
+
+.insight-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.insight-table th,
+.insight-table td {
+  padding: 10px;
+  border-bottom: 1px solid #333;
+  color: #fff;
+}
+
+.insight-table th {
+  text-align: left;
+  color: #bdbdbd;
+}
