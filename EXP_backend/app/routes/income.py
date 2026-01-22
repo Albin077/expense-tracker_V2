@@ -14,6 +14,12 @@ ALLOWED_SORT_FIELDS = {
 # ------------------------------
 @router.post("/income")
 def add_income(data: dict, user=Depends(get_current_user), db=Depends(get_db)):
+    # ✅ BACKEND VALIDATION
+    required = ["income_date", "source", "amount"]
+    for field in required:
+        if not data.get(field):
+            return {"error": f"{field} is required"}
+
     cur = db.cursor()
     cur.execute(
         """

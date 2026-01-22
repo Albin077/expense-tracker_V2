@@ -108,59 +108,112 @@ function renderIncome() {
    ADD / UPDATE / DELETE
 ---------------------------- */
 async function addIncome() {
-  const session = await requireLogin();
-  if (!session) return;
+  const button = event.target;
 
-  await fetch("http://127.0.0.1:8000/income", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${session.access_token}`,
-    },
-    body: JSON.stringify({
-      income_date: document.getElementById("new-inc-date").value,
-      source: document.getElementById("new-inc-src").value,
-      amount: Number(document.getElementById("new-inc-amt").value),
-      comment: document.getElementById("new-inc-com").value,
-    }),
+  await disableWhileLoading(button, async () => {
+    const session = await requireLogin();
+    if (!session) return;
+
+    const res = await fetch("http://127.0.0.1:8000/income", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({
+        income_date: document.getElementById("new-inc-date").value,
+        source: document.getElementById("new-inc-src").value,
+        amount: Number(document.getElementById("new-inc-amt").value),
+        comment: document.getElementById("new-inc-com").value,
+      }),
+    });
+
+    if (res.status === 401) {
+      alert("Session expired. Please login again.");
+      location.href = "login.html";
+      return;
+    }
+
+    if (!res.ok) {
+      alert("Failed to add income");
+      return;
+    }
+
+    loadIncome();
   });
-
-  loadIncome();
 }
 
-async function updateIncome(id) {
-  const session = await requireLogin();
-  if (!session) return;
 
-  await fetch(`http://127.0.0.1:8000/income/${id}`, {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${session.access_token}`,
-    },
-    body: JSON.stringify({
-      income_date: document.getElementById(`date-${id}`).value,
-      source: document.getElementById(`src-${id}`).value,
-      amount: Number(document.getElementById(`amt-${id}`).value),
-      comment: document.getElementById(`com-${id}`).value,
-    }),
+async function updateIncome(id) {
+  const button = event.target;
+
+  await disableWhileLoading(button, async () => {
+    const session = await requireLogin();
+    if (!session) return;
+
+    const res = await fetch(`http://127.0.0.1:8000/income/${id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({
+        income_date: document.getElementById(`date-${id}`).value,
+        source: document.getElementById(`src-${id}`).value,
+        amount: Number(document.getElementById(`amt-${id}`).value),
+        comment: document.getElementById(`com-${id}`).value,
+      }),
+    });
+
+    if (res.status === 401) {
+      alert("Session expired. Please login again.");
+      location.href = "login.html";
+      return;
+    }
+
+    if (!res.ok) {
+      alert("Failed to update income");
+      return;
+    }
   });
 }
 
 async function deleteIncome(id) {
   if (!confirm("Delete income?")) return;
 
-  const session = await requireLogin();
-  if (!session) return;
+  const button = event.target;
 
-  await fetch(`http://127.0.0.1:8000/income/${id}`, {
-    method: "DELETE",
-    headers: {
-      Authorization: `Bearer ${session.access_token}`,
-    },
+  await disableWhileLoading(button, async () => {
+    const session = await requireLogin();
+    if (!session) return;
+
+    const res = await fetch(`http://127.0.0.1:8000/income/${id}`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+      },
+    });
+
+    if (res.status === 401) {
+      alert("Session expired. Please login again.");
+      location.href = "login.html";
+      return;
+    }
+
+    if (!res.ok) {
+      alert("Failed to delete income");
+      return;
+    }
+
+    loadIncome();
   });
-
-  loadIncome();
 }
 
-loadIncome();
+document.addEventListener("DOMContentLoaded", async () => {
+  const fakeBtn = document.createElement("button");
+
+  await disableWhileLoading(fakeBtn, async () => {
+    await loadIncome();
+  });
+});
+

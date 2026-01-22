@@ -1,0 +1,18 @@
+.autocomplete-list {
+  position: absolute;
+  background: #fff;
+  border: 1px solid #ccc;
+  width: 200px;
+  max-height: 150px;
+  overflow-y: auto;
+  z-index: 999;
+}
+
+.autocomplete-item {
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+.autocomplete-item:hover {
+  background-color: #f2f2f2;
+}

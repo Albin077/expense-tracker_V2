@@ -1,10 +1,11 @@
-// js/home.js
 const sb = window.supabaseClient;
+const API = "http://127.0.0.1:8000";
 
-/* ---------- AUTH CHECK ---------- */
+/* ---------------------------
+   AUTH GUARD
+---------------------------- */
 async function requireLogin() {
   const { data: { session } } = await sb.auth.getSession();
-
   if (!session) {
     location.href = "login.html";
     return null;
@@ -12,89 +13,169 @@ async function requireLogin() {
   return session;
 }
 
-/* ---------- ADD EXPENSE ---------- */
-async function addExpense() {
+/* ---------------------------
+   LOAD EXISTING DATA
+---------------------------- */
+let expenseCategories = [];
+let incomeSources = [];
+
+async function loadAutocompleteData() {
   const session = await requireLogin();
   if (!session) return;
 
-  const expense_date = document.getElementById("expDate").value;
-  const category     = document.getElementById("expCategory").value;
-  const amount       = document.getElementById("expAmount").value;
-  const comment      = document.getElementById("expComment").value;
+  const headers = {
+    Authorization: `Bearer ${session.access_token}`
+  };
 
-  if (!expense_date || !category || !amount) {
-    alert("Please fill all required expense fields");
-    return;
-  }
+  const expRes = await fetch(`${API}/expenses`, { headers });
+  const expRows = await expRes.json();
 
-  const res = await fetch("http://127.0.0.1:8000/expenses", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${session.access_token}`
-    },
-    body: JSON.stringify({
-      expense_date,
-      category,
-      amount,
-      comment
-    })
-  });
+  expenseCategories = [
+    ...new Set(expRows.map(r => r[2]).filter(Boolean))
+  ];
 
-  if (!res.ok) {
-    alert("Failed to add expense");
-    return;
-  }
+  const incRes = await fetch(`${API}/income`, { headers });
+  const incRows = await incRes.json();
 
-  document.getElementById("expDate").value = "";
-  document.getElementById("expCategory").value = "";
-  document.getElementById("expAmount").value = "";
-  document.getElementById("expComment").value = "";
-
-  alert("Expense added ✅");
+  incomeSources = [
+    ...new Set(incRows.map(r => r[2]).filter(Boolean))
+  ];
 }
 
-/* ---------- ADD INCOME ---------- */
-async function addIncome() {
-  const session = await requireLogin();
-  if (!session) return;
+/* ---------------------------
+   AUTOCOMPLETE ENGINE
+---------------------------- */
+function setupAutocomplete(inputId, listId, values) {
+  const input = document.getElementById(inputId);
+  const list = document.getElementById(listId);
 
-  const income_date = document.getElementById("incDate").value;
-  const source      = document.getElementById("incSource").value;
-  const amount      = document.getElementById("incAmount").value;
-  const comment     = document.getElementById("incComment").value;
+  input.addEventListener("input", () => {
+    const query = input.value.toLowerCase();
+    list.innerHTML = "";
+    if (!query) return;
 
-  if (!income_date || !source || !amount) {
-    alert("Please fill all required income fields");
-    return;
-  }
+    values
+      .filter(v => v.toLowerCase().startsWith(query))
+      .forEach(v => {
+        const item = document.createElement("div");
+        item.className = "autocomplete-item";
+        item.textContent = v;
 
-  const res = await fetch("http://127.0.0.1:8000/income", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${session.access_token}`
-    },
-    body: JSON.stringify({
-      income_date,
-      source,
-      amount,
-      comment
-    })
+        item.onclick = () => {
+          input.value = v;
+          list.innerHTML = "";
+        };
+
+        list.appendChild(item);
+      });
   });
 
-  if (!res.ok) {
-    alert("Failed to add income");
-    return;
-  }
-
-  document.getElementById("incDate").value = "";
-  document.getElementById("incSource").value = "";
-  document.getElementById("incAmount").value = "";
-  document.getElementById("incComment").value = "";
-
-  alert("Income added ✅");
+  document.addEventListener("click", e => {
+    if (!list.contains(e.target) && e.target !== input) {
+      list.innerHTML = "";
+    }
+  });
 }
 
-/* ---------- RUN ON LOAD ---------- */
-requireLogin();
+/* ---------------------------
+   ADD EXPENSE (HOME)
+---------------------------- */
+async function addExpense(btn) {
+  await disableWhileLoading(btn, async () => {
+    const session = await requireLogin();
+    if (!session) return;
+
+    const expense_date = expDate.value;
+    const category = expCategory.value.trim();
+    const amount = expAmount.value;
+    const comment = expComment.value;
+
+    if (!expense_date || !category || !amount) {
+      alert("Please fill all required expense fields");
+      return;
+    }
+
+    await fetch(`${API}/expenses`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.access_token}`
+      },
+      body: JSON.stringify({
+        expense_date,
+        category,
+        amount,
+        comment
+      })
+    });
+
+    expDate.value = "";
+    expCategory.value = "";
+    expAmount.value = "";
+    expComment.value = "";
+
+    await loadAutocompleteData();
+  });
+}
+
+/* ---------------------------
+   ADD INCOME (HOME)
+---------------------------- */
+async function addIncome(btn) {
+  await disableWhileLoading(btn, async () => {
+    const session = await requireLogin();
+    if (!session) return;
+
+    const income_date = incDate.value;
+    const source = incSource.value.trim();
+    const amount = incAmount.value;
+    const comment = incComment.value;
+
+    if (!income_date || !source || !amount) {
+      alert("Please fill all required income fields");
+      return;
+    }
+
+    await fetch(`${API}/income`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.access_token}`
+      },
+      body: JSON.stringify({
+        income_date,
+        source,
+        amount,
+        comment
+      })
+    });
+
+    incDate.value = "";
+    incSource.value = "";
+    incAmount.value = "";
+    incComment.value = "";
+
+    await loadAutocompleteData();
+  });
+}
+
+/* ---------------------------
+   INIT (PAGE LOAD)
+---------------------------- */
+document.addEventListener("DOMContentLoaded", async () => {
+  await disableWhileLoading({ disabled: false }, async () => {
+    await loadAutocompleteData();
+
+    setupAutocomplete(
+      "expCategory",
+      "expCategoryList",
+      expenseCategories
+    );
+
+    setupAutocomplete(
+      "incSource",
+      "incSourceList",
+      incomeSources
+    );
+  });
+});

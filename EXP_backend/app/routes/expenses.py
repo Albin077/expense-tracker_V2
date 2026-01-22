@@ -1,15 +1,21 @@
 from fastapi import APIRouter, Depends
+from datetime import date
 from app.auth import get_current_user
 from app.db import get_db
 
 router = APIRouter()
-
 
 # ------------------------------
 # ADD EXPENSE
 # ------------------------------
 @router.post("/expenses")
 def add_expense(data: dict, user=Depends(get_current_user), db=Depends(get_db)):
+    # ✅ BACKEND VALIDATION
+    required = ["expense_date", "category", "amount"]
+    for field in required:
+        if not data.get(field):
+            return {"error": f"{field} is required"}
+
     cur = db.cursor()
     cur.execute(
         """
@@ -29,9 +35,8 @@ def add_expense(data: dict, user=Depends(get_current_user), db=Depends(get_db)):
 
 
 # ------------------------------
-# GET EXPENSES (WITH ID for editing)
+# GET EXPENSES
 # ------------------------------
-
 @router.get("/expenses")
 def get_expenses(
     sort_by: str = "date",
@@ -39,66 +44,20 @@ def get_expenses(
     month: int | None = None,
     category: str | None = None,
     keyword: str | None = None,
+    search: str | None = None,   # ✅ ADD THIS (non-breaking)
     user=Depends(get_current_user),
     db=Depends(get_db),
 ):
     cur = db.cursor()
 
-    # ---- ALLOWED SORT FIELDS (security)
     sort_map = {
         "date": "expense_date",
         "amount": "amount",
         "category": "category",
     }
     sort_column = sort_map.get(sort_by, "expense_date")
-    order = "ASC" if order.lower() == "asc" else "DESC"
+    order_sql = "ASC" if order.lower() == "asc" else "DESC"
 
-    query = """
-        SELECT id, expense_date, category, amount, comment
-        FROM expenses
-        WHERE user_id = %s
-    """
-    params = [user["sub"]]
-
-    # ---- FILTERS
-    if month:
-        query += " AND EXTRACT(MONTH FROM expense_date) = %s"
-        params.append(month)
-
-    if category:
-        query += " AND category = %s"
-        params.append(category)
-
-    if keyword:
-        query += """
-            AND (
-                category ILIKE %s
-                OR comment ILIKE %s
-                OR amount::TEXT ILIKE %s
-            )
-        """
-        kw = f"%{keyword}%"
-        params.extend([kw, kw, kw])
-
-    query += f" ORDER BY {sort_column} {order}"
-
-    cur.execute(query, params)
-    return cur.fetchall()
-
-def get_expenses(
-    sort_by: str = "date",          # date | category | amount
-    order: str = "desc",            # asc | desc
-    month: int | None = None,       # 1 - 12
-    category: str | None = None,    # exact category
-    keyword: str | None = None,     # search in comment
-    user=Depends(get_current_user),
-    db=Depends(get_db),
-):
-    cur = db.cursor()
-
-    # ------------------------------
-    # BASE QUERY
-    # ------------------------------
     query = """
         SELECT id, expense_date, category, amount, comment
         FROM expenses
@@ -117,45 +76,26 @@ def get_expenses(
         query += " AND category = %s"
         params.append(category)
 
-    if keyword:
-        query += " AND comment ILIKE %s"
-        params.append(f"%{keyword}%")
-
-    # ------------------------------
-    # SORTING
-    # ------------------------------
-    sort_map = {
-        "date": "expense_date",
-        "category": "category",
-        "amount": "amount",
-    }
-
-    sort_column = sort_map.get(sort_by, "expense_date")
-    sort_order = "ASC" if order.lower() == "asc" else "DESC"
-
-    query += f" ORDER BY {sort_column} {sort_order}"
-
-    # ------------------------------
-    # EXECUTE
-    # ------------------------------
-    cur.execute(query, tuple(params))
-    return cur.fetchall()
-
-    cur = db.cursor()
-    cur.execute(
+    # ✅ SUPPORT BOTH keyword & search
+    term = keyword or search
+    if term:
+        query += """
+            AND (
+                category ILIKE %s
+                OR comment ILIKE %s
+                OR amount::TEXT ILIKE %s
+            )
         """
-        SELECT id, expense_date, category, amount, comment
-        FROM expenses
-        WHERE user_id = %s
-        ORDER BY expense_date DESC
-        """,
-        (user["sub"],),
-    )
-    return cur.fetchall()
+        kw = f"%{term}%"
+        params.extend([kw, kw, kw])
 
+    query += f" ORDER BY {sort_column} {order_sql}"
+
+    cur.execute(query, params)
+    return cur.fetchall()
 
 # ------------------------------
-# UPDATE EXPENSE (INLINE EDIT)
+# UPDATE EXPENSE
 # ------------------------------
 @router.put("/expenses/{expense_id}")
 def update_expense(
@@ -198,11 +138,65 @@ def delete_expense(
 ):
     cur = db.cursor()
     cur.execute(
-        """
-        DELETE FROM expenses
-        WHERE id = %s AND user_id = %s
-        """,
+        "DELETE FROM expenses WHERE id = %s AND user_id = %s",
         (expense_id, user["sub"]),
     )
     db.commit()
     return {"status": "expense deleted"}
+
+
+# =========================================================
+# 📊 SPENDING INCREASE INSIGHT (NEW)
+# =========================================================
+@router.get("/expenses/spending-increase")
+def spending_increase(user=Depends(get_current_user), db=Depends(get_db)):
+    cur = db.cursor()
+
+    today = date.today()
+    cur_month = today.month
+    cur_year = today.year
+
+    prev_month = cur_month - 1
+    prev_year = cur_year
+    if prev_month == 0:
+        prev_month = 12
+        prev_year -= 1
+
+    query = """
+        SELECT category,
+               SUM(CASE
+                   WHEN EXTRACT(MONTH FROM expense_date) = %s
+                    AND EXTRACT(YEAR FROM expense_date) = %s
+                   THEN amount ELSE 0 END) AS current_total,
+               SUM(CASE
+                   WHEN EXTRACT(MONTH FROM expense_date) = %s
+                    AND EXTRACT(YEAR FROM expense_date) = %s
+                   THEN amount ELSE 0 END) AS previous_total
+        FROM expenses
+        WHERE user_id = %s
+        GROUP BY category
+    """
+
+    cur.execute(
+        query,
+        (
+            cur_month,
+            cur_year,
+            prev_month,
+            prev_year,
+            user["sub"],
+        ),
+    )
+
+    rows = cur.fetchall()
+
+    result = []
+    for category, current, previous in rows:
+        if previous > 0 and current > previous:
+            percent = ((current - previous) / previous) * 100
+            result.append({
+                "category": category,
+                "percent": round(percent, 1),
+            })
+
+    return result

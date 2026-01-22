@@ -10,3 +10,34 @@ if (!window.supabaseClient) {
   );
 }
 
+/* ============================
+   GLOBAL LOADER HELPERS
+   (DO NOT REMOVE)
+============================ */
+
+function showLoader() {
+  const el = document.getElementById("globalLoader");
+  if (el) el.style.display = "flex";
+}
+
+function hideLoader() {
+  const el = document.getElementById("globalLoader");
+  if (el) el.style.display = "none";
+}
+
+/* ============================
+   DISABLE BUTTON WHILE LOADING
+   (STABLE PERMANENT HELPER)
+============================ */
+
+function disableWhileLoading(button, task) {
+  if (button) button.disabled = true;
+  showLoader();
+
+  return Promise.resolve(task())
+    .finally(() => {
+      if (button) button.disabled = false;
+      hideLoader();
+    });
+}
+

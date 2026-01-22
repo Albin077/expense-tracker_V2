@@ -8,6 +8,7 @@ from app.routes.expenses import router as expenses_router
 from app.routes.income import router as income_router
 from app.routes.analytics import router as analytics_router
 
+
 app = FastAPI()
 
 

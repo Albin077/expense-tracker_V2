@@ -1,4 +1,3 @@
-// js/expenses.js
 const sb = window.supabaseClient;
 
 /* ---------------------------
@@ -14,7 +13,7 @@ async function requireLogin() {
 }
 
 /* ---------------------------
-   LOAD EXPENSES (WITH FILTERS)
+   LOAD EXPENSES
 ---------------------------- */
 async function loadExpenses(params = {}) {
   const session = await requireLogin();
@@ -35,134 +34,110 @@ async function loadExpenses(params = {}) {
   const tbody = document.getElementById("expenseBody");
   tbody.innerHTML = "";
 
-  /* ---------------------------
-     EXISTING EXPENSE ROWS
-  ---------------------------- */
   rows.forEach((r) => {
     const tr = document.createElement("tr");
-
     tr.innerHTML = `
-      <td>
-        <input type="date" id="date-${r[0]}" value="${r[1] ?? ""}">
-      </td>
-      <td>
-        <input id="cat-${r[0]}" value="${r[2] ?? ""}">
-      </td>
-      <td>
-        <input type="number" id="amt-${r[0]}" value="${r[3] ?? ""}">
-      </td>
-      <td>
-        <input id="com-${r[0]}" value="${r[4] ?? ""}">
-      </td>
+      <td><input type="date" id="date-${r[0]}" value="${r[1] ?? ""}"></td>
+      <td><input id="cat-${r[0]}" value="${r[2] ?? ""}"></td>
+      <td><input type="number" id="amt-${r[0]}" value="${r[3] ?? ""}"></td>
+      <td><input id="com-${r[0]}" value="${r[4] ?? ""}"></td>
       <td>
         <button onclick="updateExpense(${r[0]})">💾</button>
         <button onclick="deleteExpense(${r[0]})">🗑</button>
       </td>
     `;
-
     tbody.appendChild(tr);
   });
 
-  /* ---------------------------
-     INLINE ADD EXPENSE ROW
-  ---------------------------- */
+  // Add row
   const addRow = document.createElement("tr");
-
   addRow.innerHTML = `
-    <td>
-      <input type="date" id="new-exp-date">
-    </td>
-    <td>
-      <input id="new-exp-cat" placeholder="Category">
-    </td>
-    <td>
-      <input type="number" id="new-exp-amt" placeholder="Amount">
-    </td>
-    <td>
-      <input id="new-exp-com" placeholder="Comment">
-    </td>
-    <td>
-      <button onclick="addExpense()">➕</button>
-    </td>
+    <td><input type="date" id="new-exp-date"></td>
+    <td><input id="new-exp-cat"></td>
+    <td><input type="number" id="new-exp-amt"></td>
+    <td><input id="new-exp-com"></td>
+    <td><button onclick="addExpense()">➕</button></td>
   `;
-
   tbody.appendChild(addRow);
-}
-
-/* ---------------------------
-   APPLY FILTERS
----------------------------- */
-function applyFilters() {
-  const params = {
-    sort_by: document.getElementById("sortBy").value,
-    order: document.getElementById("order").value,
-  };
-
-  const month = document.getElementById("month").value;
-  const keyword = document.getElementById("keyword").value;
-
-  if (month) params.month = month;
-  if (keyword) params.keyword = keyword;
-
-  loadExpenses(params);
 }
 
 /* ---------------------------
    ADD EXPENSE
 ---------------------------- */
 async function addExpense() {
-  const session = await requireLogin();
-  if (!session) return;
+  const button = event.target;
 
-  const date = document.getElementById("new-exp-date").value;
-  const cat = document.getElementById("new-exp-cat").value;
-  const amt = document.getElementById("new-exp-amt").value;
-  const com = document.getElementById("new-exp-com").value;
+  await disableWhileLoading(button, async () => {
+    const session = await requireLogin();
+    if (!session) return;
 
-  if (!date || !cat || !amt) {
-    alert("Date, Category & Amount are required");
-    return;
-  }
+    const res = await fetch("http://127.0.0.1:8000/expenses", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({
+        expense_date: document.getElementById("new-exp-date").value,
+        category: document.getElementById("new-exp-cat").value,
+        amount: Number(document.getElementById("new-exp-amt").value),
+        comment: document.getElementById("new-exp-com").value,
+      }),
+    });
 
-  await fetch("http://127.0.0.1:8000/expenses", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${session.access_token}`,
-    },
-    body: JSON.stringify({
-      expense_date: date,
-      category: cat,
-      amount: Number(amt),
-      comment: com,
-    }),
+    if (res.status === 401) {
+      alert("Session expired. Please login again.");
+      location.href = "login.html";
+      return;
+    }
+
+    if (!res.ok) {
+      alert("Failed to add expense");
+      return;
+    }
+
+    loadExpenses();
+    loadSpendingIncreaseInsight();
   });
-
-  loadExpenses();
 }
 
 /* ---------------------------
    UPDATE EXPENSE
 ---------------------------- */
 async function updateExpense(id) {
-  const session = await requireLogin();
-  if (!session) return;
+  const button = event.target;
 
-  await fetch(`http://127.0.0.1:8000/expenses/${id}`, {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${session.access_token}`,
-    },
-    body: JSON.stringify({
-      expense_date: document.getElementById(`date-${id}`).value,
-      category: document.getElementById(`cat-${id}`).value,
-      amount: Number(document.getElementById(`amt-${id}`).value),
-      comment: document.getElementById(`com-${id}`).value,
-    }),
+  await disableWhileLoading(button, async () => {
+    const session = await requireLogin();
+    if (!session) return;
+
+    const res = await fetch(`http://127.0.0.1:8000/expenses/${id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({
+        expense_date: document.getElementById(`date-${id}`).value,
+        category: document.getElementById(`cat-${id}`).value,
+        amount: Number(document.getElementById(`amt-${id}`).value),
+        comment: document.getElementById(`com-${id}`).value,
+      }),
+    });
+
+    if (res.status === 401) {
+      alert("Session expired. Please login again.");
+      location.href = "login.html";
+      return;
+    }
+
+    if (!res.ok) {
+      alert("Failed to update expense");
+      return;
+    }
+
+    loadSpendingIncreaseInsight();
   });
-
-  alert("Expense updated ✅");
 }
 
 /* ---------------------------
@@ -171,20 +146,95 @@ async function updateExpense(id) {
 async function deleteExpense(id) {
   if (!confirm("Delete expense?")) return;
 
+  const button = event.target;
+
+  await disableWhileLoading(button, async () => {
+    const session = await requireLogin();
+    if (!session) return;
+
+    const res = await fetch(`http://127.0.0.1:8000/expenses/${id}`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+      },
+    });
+
+    if (res.status === 401) {
+      alert("Session expired. Please login again.");
+      location.href = "login.html";
+      return;
+    }
+
+    if (!res.ok) {
+      alert("Failed to delete expense");
+      return;
+    }
+
+    loadExpenses();
+    loadSpendingIncreaseInsight();
+  });
+}
+
+
+/* =====================================================
+   📊 SPENDING INCREASE INSIGHT
+===================================================== */
+async function loadSpendingIncreaseInsight() {
   const session = await requireLogin();
   if (!session) return;
 
-  await fetch(`http://127.0.0.1:8000/expenses/${id}`, {
-    method: "DELETE",
-    headers: {
-      Authorization: `Bearer ${session.access_token}`,
-    },
-  });
+  const res = await fetch(
+    "http://127.0.0.1:8000/expenses/spending-increase",
+    {
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+      },
+    }
+  );
 
-  loadExpenses();
+  if (!res.ok) return;
+
+  const data = await res.json();
+  const el = document.getElementById("spendingIncrease");
+  if (!el) return;
+
+  if (data.length === 0) {
+    el.innerHTML = "No spending increase compared to last month ✅";
+    return;
+  }
+
+  el.innerHTML = data
+    .map(d => `${d.category} ↑ ${d.percent}% vs last month`)
+    .join("<br>");
+}
+/* ---------------------------
+   APPLY FILTERS / SORTING
+---------------------------- */
+function applyFilters() {
+  const sortBy = document.getElementById("sortBy").value;
+  const order = document.getElementById("order").value;
+  const month = document.getElementById("month").value;
+  const keyword = document.getElementById("keyword").value.trim();
+
+  const params = {};
+
+  if (sortBy) params.sort_by = sortBy;
+  if (order) params.order = order;
+  if (month) params.month = month;
+  if (keyword) params.search = keyword;
+
+  loadExpenses(params);
 }
 
 /* ---------------------------
    INIT
 ---------------------------- */
-loadExpenses();
+document.addEventListener("DOMContentLoaded", async () => {
+  const fakeBtn = document.createElement("button");
+
+  await disableWhileLoading(fakeBtn, async () => {
+    await loadExpenses();
+    await loadSpendingIncreaseInsight();
+  });
+});
+

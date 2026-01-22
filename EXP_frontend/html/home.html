@@ -1,33 +1,133 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8">
   <title>Home</title>
+
+  <!-- Autocomplete styles -->
+  <link rel="stylesheet" href="/css/autocomplete.css">
+
+  <style>
+    /* small layout safety */
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+
+    .field-wrap {
+      position: relative;
+      margin-bottom: 10px;
+    }
+
+    input {
+      padding: 6px;
+      width: 200px;
+    }
+
+    button {
+      padding: 6px 10px;
+      cursor: pointer;
+    }
+
+    hr {
+      margin: 20px 0;
+    }
+  </style>
 </head>
 <body>
 
-<h3>Add Expense</h3>
-<input id="expDate" type="date">
-<input id="expCategory" placeholder="Category">
-<input id="expAmount" type="number">
-<input id="expComment" placeholder="Comment">
-<button onclick="addExpense()">Add Expense</button>
+  <!-- ======================
+       ADD EXPENSE
+  ======================= -->
+  <h3>Add Expense</h3>
 
-<hr>
+  <div class="field-wrap">
+    <input id="expDate" type="date">
+  </div>
 
-<h3>Add Income</h3>
-<input id="incDate" type="date">
-<input id="incSource" placeholder="Source">
-<input id="incAmount" type="number">
-<input id="incComment" placeholder="Comment">
-<button onclick="addIncome()">Add Income</button>
+  <div class="field-wrap">
+    <input id="expCategory" placeholder="Category">
+    <div id="expCategoryList" class="autocomplete-list"></div>
+  </div>
 
-<hr>
+  <div class="field-wrap">
+    <input id="expAmount" type="number" placeholder="Amount">
+  </div>
 
-<a href="expenses.html">Expenses</a> |
-<a href="income.html">Income</a>
+  <div class="field-wrap">
+    <input id="expComment" placeholder="Comment">
+  </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="/js/supabaseClient.js"></script>
-<script src="/js/home.js"></script>
+  <button onclick="addExpense(this)">Add Expense</button>
+
+
+  <hr>
+
+  <!-- ======================
+       ADD INCOME
+  ======================= -->
+  <h3>Add Income</h3>
+
+  <div class="field-wrap">
+    <input id="incDate" type="date">
+  </div>
+
+  <div class="field-wrap">
+    <input id="incSource" placeholder="Source">
+    <div id="incSourceList" class="autocomplete-list"></div>
+  </div>
+
+  <div class="field-wrap">
+    <input id="incAmount" type="number" placeholder="Amount">
+  </div>
+
+  <div class="field-wrap">
+    <input id="incComment" placeholder="Comment">
+  </div>
+
+  <button onclick="addIncome(this)">Add Income</button>
+
+
+  <hr>
+
+  <!-- ======================
+       NAVIGATION
+  ======================= -->
+  <a href="expenses.html">Expenses</a> |
+  <a href="income.html">Income</a> |
+  <a href="analytics.html">Analytics</a>
+
+  <!-- ======================
+       SCRIPTS
+  ======================= -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/js/supabaseClient.js"></script>
+  <script src="/js/home.js"></script>
+<!-- GLOBAL LOADING OVERLAY -->
+<div id="globalLoader" style="
+  display:none;
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,0.3);
+  z-index:9999;
+  align-items:center;
+  justify-content:center;
+">
+  <div style="
+    width:40px;
+    height:40px;
+    border:4px solid #ddd;
+    border-top:4px solid #333;
+    border-radius:50%;
+    animation: spin 1s linear infinite;
+  "></div>
+</div>
+
+<style>
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+</style>
+
 </body>
 </html>
