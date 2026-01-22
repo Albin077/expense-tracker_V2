@@ -1,0 +1,59 @@
+/* =========================
+   BASE (MOBILE FIRST)
+========================= */
+
+body {
+  margin: 0;
+  padding: 12px;
+}
+
+input,
+select,
+button {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  font-size: 16px; /* prevents mobile zoom */
+}
+
+button {
+  padding: 10px;
+}
+
+.controls {
+  flex-direction: column;
+}
+
+.card {
+  margin: 12px 0;
+}
+
+/* =========================
+   TABLET (>= 600px)
+========================= */
+@media (min-width: 600px) {
+  body {
+    padding: 20px;
+  }
+
+  input,
+  select,
+  button {
+    max-width: 300px;
+  }
+
+  .controls {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+}
+
+/* =========================
+   DESKTOP (>= 900px)
+========================= */
+@media (min-width: 900px) {
+  .card {
+    max-width: 900px;
+    margin: auto;
+  }
+}

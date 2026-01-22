@@ -159,6 +159,11 @@ async function addIncome(btn) {
   });
 }
 
+async function logout() {
+  await sb.auth.signOut();
+  location.href = "login.html";
+}
+
 /* ---------------------------
    INIT (PAGE LOAD)
 ---------------------------- */

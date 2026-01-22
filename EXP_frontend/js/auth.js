@@ -1,32 +1,87 @@
-// js/auth.js
 const sb = window.supabaseClient;
 
-function emailInput() {
-  return document.getElementById("email");
-}
-function passwordInput() {
-  return document.getElementById("password");
-}
 function setStatus(msg) {
   document.getElementById("status").innerText = msg;
 }
 
-async function signup() {
-  const { error } = await sb.auth.signUp({
-    email: emailInput().value,
-    password: passwordInput().value
-  });
-  if (error) return setStatus(error.message);
-  setStatus("Signup successful ✅");
+/* =====================
+   UI SWITCHERS
+===================== */
+function hideAll() {
+  loginBox.classList.add("hidden");
+  signupBox.classList.add("hidden");
+  changeBox.classList.add("hidden");
 }
 
+function showLogin() {
+  hideAll();
+  loginBox.classList.remove("hidden");
+  title.innerText = "Login";
+}
+
+function showSignup() {
+  hideAll();
+  signupBox.classList.remove("hidden");
+  title.innerText = "Create Account";
+}
+
+function showChange() {
+  hideAll();
+  changeBox.classList.remove("hidden");
+  title.innerText = "Change Password";
+}
+
+/* =====================
+   AUTH ACTIONS
+===================== */
 async function login() {
-  const { error } = await sb.auth.signInWithPassword({
-    email: emailInput().value,
-    password: passwordInput().value
+  await disableWhileLoading(null, async () => {
+    const { error } = await sb.auth.signInWithPassword({
+      email: loginEmail.value,
+      password: loginPassword.value
+    });
+
+    if (error) return setStatus(error.message);
+    location.href = "home.html";
   });
-  if (error) return setStatus(error.message);
-  location.href = "home.html";
+}
+
+async function signup() {
+  await disableWhileLoading(null, async () => {
+    const { error } = await sb.auth.signUp({
+      email: signupEmail.value,
+      password: signupPassword.value
+    });
+
+    if (error) return setStatus(error.message);
+    setStatus("Account created ✅");
+  });
+}
+
+async function changePassword() {
+  await disableWhileLoading(null, async () => {
+    const { error: loginError } =
+      await sb.auth.signInWithPassword({
+        email: changeEmail.value,
+        password: currentPassword.value
+      });
+
+    if (loginError) {
+      alert("Current password incorrect");
+      return;
+    }
+
+    const { error } = await sb.auth.updateUser({
+      password: newPassword.value
+    });
+
+    if (error) return alert(error.message);
+
+    alert("Password changed successfully ✅");
+
+    currentPassword.value = "";
+    newPassword.value = "";
+  });
 }
 
 async function logout() {

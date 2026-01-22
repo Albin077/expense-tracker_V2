@@ -371,14 +371,18 @@ async function loadAvgExpenseTable() {
 /* =========================
    INIT
 ========================= */
-fillYears();
-loadChart();
+document.addEventListener("DOMContentLoaded", async () => {
+  await disableWhileLoading({ disabled: false }, async () => {
+    fillYears();
+    await loadChart();
 
-setDefaultCategoryDates();  // 👈 MUST be before loadCategoryChart
-loadCategoryChart();
+    setDefaultCategoryDates();  // 👈 MUST be before loadCategoryChart
+    await loadCategoryChart();
 
-loadIncomeExpenseInsight();
-loadSpendingIncreaseInsight();
-loadNewCategoryInsight();
-loadAvgExpenseTable();
+    await loadIncomeExpenseInsight();
+    await loadSpendingIncreaseInsight();
+    await loadNewCategoryInsight();
+    await loadAvgExpenseTable();
+  });
+});
 

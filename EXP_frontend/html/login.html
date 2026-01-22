@@ -1,24 +1,111 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Login</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Auth</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f6f7fb;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .card {
+      background: white;
+      padding: 24px;
+      border-radius: 8px;
+      width: 320px;
+      box-shadow: 0 2px 10px rgba(0,0,0,.1);
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 15px;
+    }
+
+    input {
+      width: 100%;
+      padding: 8px;
+      margin-bottom: 10px;
+    }
+
+    button {
+      width: 100%;
+      padding: 8px;
+      margin-top: 8px;
+      cursor: pointer;
+    }
+
+    .switch {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 15px;
+    }
+
+    .switch button {
+      flex: 1;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .status {
+      text-align: center;
+      margin-top: 10px;
+      color: red;
+    }
+  </style>
+  <link rel="stylesheet" href="/css/responsive.css">
+
 </head>
+
 <body>
-<a href="home.html">⬅ Back</a>|
-<h2>Login</h2>
 
-<input id="email" type="email" placeholder="Email"><br><br>
-<input id="password" type="password" placeholder="Password"><br><br>
+<div class="card">
 
-<button onclick="signup()">Signup</button>
-<button onclick="login()">Login</button>
+  <h2 id="title">Login</h2>
 
-<p id="status"></p>
+  <!-- MODE SWITCH -->
+  <div class="switch">
+    <button onclick="showLogin()">Login</button>
+    <button onclick="showSignup()">Create Account</button>
+    <button onclick="showChange()">Change Password</button>
+  </div>
+
+  <!-- LOGIN -->
+  <div id="loginBox">
+    <input id="loginEmail" type="email" placeholder="Email">
+    <input id="loginPassword" type="password" placeholder="Password">
+    <button onclick="login()">Login</button>
+  </div>
+
+  <!-- SIGNUP -->
+  <div id="signupBox" class="hidden">
+    <input id="signupEmail" type="email" placeholder="Email">
+    <input id="signupPassword" type="password" placeholder="Password">
+    <button onclick="signup()">Create Account</button>
+  </div>
+
+  <!-- CHANGE PASSWORD -->
+  <div id="changeBox" class="hidden">
+    <input id="changeEmail" type="email" placeholder="Email">
+    <input id="currentPassword" type="password" placeholder="Current password">
+    <input id="newPassword" type="password" placeholder="New password">
+    <button onclick="changePassword()">Change Password</button>
+  </div>
+
+  <div id="status" class="status"></div>
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="/js/supabaseClient.js"></script>
 <script src="/js/auth.js"></script>
-<!-- GLOBAL LOADING OVERLAY -->
+
+<!-- GLOBAL LOADER -->
 <div id="globalLoader" style="
   display:none;
   position:fixed;
