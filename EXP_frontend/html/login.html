@@ -2,110 +2,123 @@
 <html>
 <head>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/responsive.css">
+
   <title>Auth</title>
+
+  <!-- Page-specific styles ONLY -->
   <style>
     body {
-      font-family: Arial, sans-serif;
-      background: #f6f7fb;
+      min-height: 100vh;
       display: flex;
       justify-content: center;
       align-items: center;
-      height: 100vh;
+
+      /* Neutral background */
+      background: linear-gradient(
+        135deg,
+        #eef0f4,
+        #dfe3ea
+      );
     }
 
-    .card {
-      background: white;
-      padding: 24px;
-      border-radius: 8px;
-      width: 320px;
-      box-shadow: 0 2px 10px rgba(0,0,0,.1);
+    /* Frosted glass card */
+    .auth-card {
+      width: 340px;
+      padding: 26px;
+      border-radius: 14px;
+
+      background: rgba(255, 255, 255, 0.35);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+
+      border: 1px solid rgba(255,255,255,0.4);
+      box-shadow: 0 20px 40px rgba(0,0,0,0.08);
+    }
+
+    /* Input block separation */
+    .auth-card input {
+      background: rgba(255,255,255,0.75);
+      border: 1px solid rgba(0,0,0,0.08);
+    }
+
+    .auth-card input:focus {
+      background: rgba(255,255,255,0.9);
     }
 
     h2 {
       text-align: center;
-      margin-bottom: 15px;
+      margin-bottom: 18px;
     }
 
-    input {
-      width: 100%;
-      padding: 8px;
-      margin-bottom: 10px;
+    .hint {
+      text-align: center;
+      font-size: 14px;
+      margin-top: 14px;
+      color: var(--muted);
     }
 
-    button {
-      width: 100%;
-      padding: 8px;
-      margin-top: 8px;
+    .hint a {
       cursor: pointer;
     }
-
-    .switch {
-      display: flex;
-      gap: 6px;
-      margin-bottom: 15px;
-    }
-
-    .switch button {
-      flex: 1;
-    }
-
-    .hidden {
-      display: none;
-    }
-
-    .status {
-      text-align: center;
-      margin-top: 10px;
-      color: red;
-    }
   </style>
-  <link rel="stylesheet" href="/css/responsive.css">
-
 </head>
 
 <body>
 
-<div class="card">
+<div class="card auth-card">
 
   <h2 id="title">Login</h2>
 
-  <!-- MODE SWITCH -->
-  <div class="switch">
-    <button onclick="showLogin()">Login</button>
-    <button onclick="showSignup()">Create Account</button>
-    <button onclick="showChange()">Change Password</button>
-  </div>
-
-  <!-- LOGIN -->
+  <!-- ================= LOGIN ================= -->
   <div id="loginBox">
     <input id="loginEmail" type="email" placeholder="Email">
     <input id="loginPassword" type="password" placeholder="Password">
     <button onclick="login()">Login</button>
+
+    <div class="hint">
+      No account?
+      <a onclick="showSignup()">Create account</a>
+      <br>
+      <a onclick="showChange()">Forgot / Change password?</a>
+    </div>
   </div>
 
-  <!-- SIGNUP -->
+  <!-- ================= SIGNUP ================= -->
   <div id="signupBox" class="hidden">
     <input id="signupEmail" type="email" placeholder="Email">
     <input id="signupPassword" type="password" placeholder="Password">
     <button onclick="signup()">Create Account</button>
+
+    <div class="hint">
+      Already have an account?
+      <a onclick="showLogin()">Log in</a>
+    </div>
   </div>
 
-  <!-- CHANGE PASSWORD -->
+  <!-- ============== CHANGE PASSWORD ============== -->
   <div id="changeBox" class="hidden">
     <input id="changeEmail" type="email" placeholder="Email">
     <input id="currentPassword" type="password" placeholder="Current password">
     <input id="newPassword" type="password" placeholder="New password">
     <button onclick="changePassword()">Change Password</button>
+
+    <div class="hint">
+      <a onclick="showLogin()">← Back to login</a>
+    </div>
   </div>
 
   <div id="status" class="status"></div>
 </div>
 
+<!-- ================= SCRIPTS ================= -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="/js/supabaseClient.js"></script>
 <script src="/js/auth.js"></script>
 
-<!-- GLOBAL LOADER -->
+<!-- ================= GLOBAL LOADER ================= -->
 <div id="globalLoader" style="
   display:none;
   position:fixed;
