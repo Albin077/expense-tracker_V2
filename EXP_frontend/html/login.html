@@ -8,20 +8,18 @@
 
   <title>Auth</title>
 
-  <!-- Page-specific styles ONLY -->
   <style>
     body {
       min-height: 100vh;
       display: flex;
       justify-content: center;
       align-items: center;
+      background: linear-gradient(135deg, #eef0f4, #dfe3ea);
+    }
 
-      /* Neutral background */
-      background: linear-gradient(
-        135deg,
-        #eef0f4,
-        #dfe3ea
-      );
+    /* Wrapper to position close button */
+    .auth-wrapper {
+      position: relative;
     }
 
     /* Frosted glass card */
@@ -36,9 +34,15 @@
 
       border: 1px solid rgba(255,255,255,0.4);
       box-shadow: 0 20px 40px rgba(0,0,0,0.08);
+
+      animation: fadeIn 0.35s ease;
     }
 
-    /* Input block separation */
+    .auth-card.closing {
+      animation: fadeOut 0.3s ease forwards;
+    }
+
+    /* Inputs */
     .auth-card input {
       background: rgba(255,255,255,0.75);
       border: 1px solid rgba(0,0,0,0.08);
@@ -63,54 +67,108 @@
     .hint a {
       cursor: pointer;
     }
+
+    /* === CLOSE BUTTON (TOP CENTER, FLOATING) === */
+    .close-btn {
+      position: absolute;
+      top: -42px;
+      left: 50%;
+      transform: translateX(-50%);
+
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+
+      background: rgba(255,255,255,0.8);
+      backdrop-filter: blur(8px);
+
+      border: 1px solid rgba(0,0,0,0.12);
+      box-shadow: 0 10px 22px rgba(0,0,0,0.18);
+
+      font-size: 20px;
+      line-height: 34px;
+      text-align: center;
+      cursor: pointer;
+      user-select: none;
+
+      transition: transform 0.2s ease, background 0.2s ease;
+    }
+
+    .close-btn:hover {
+      background: rgba(255,255,255,0.95);
+      transform: translateX(-50%) scale(1.08);
+    }
+
+    /* Animations */
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: scale(0.96);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    @keyframes fadeOut {
+      to {
+        opacity: 0;
+        transform: scale(0.95);
+      }
+    }
   </style>
 </head>
 
 <body>
 
-<div class="card auth-card">
+<div class="auth-wrapper">
+  <div class="close-btn" onclick="closeAuth()">✕</div>
 
-  <h2 id="title">Login</h2>
+  <div class="card auth-card">
 
-  <!-- ================= LOGIN ================= -->
-  <div id="loginBox">
-    <input id="loginEmail" type="email" placeholder="Email">
-    <input id="loginPassword" type="password" placeholder="Password">
-    <button onclick="login()">Login</button>
+    <h2 id="title">Login</h2>
 
-    <div class="hint">
-      No account?
-      <a onclick="showSignup()">Create account</a>
-      <br>
-      <a onclick="showChange()">Forgot / Change password?</a>
+    <!-- ================= LOGIN ================= -->
+    <div id="loginBox">
+      <input id="loginEmail" type="email" placeholder="Email">
+      <input id="loginPassword" type="password" placeholder="Password">
+      <button onclick="login()">Login</button>
+
+      <div class="hint">
+        No account?
+        <a onclick="showSignup()">Create account</a>
+        <br>
+        <a onclick="showChange()">Forgot / Change password?</a>
+      </div>
     </div>
-  </div>
 
-  <!-- ================= SIGNUP ================= -->
-  <div id="signupBox" class="hidden">
-    <input id="signupEmail" type="email" placeholder="Email">
-    <input id="signupPassword" type="password" placeholder="Password">
-    <button onclick="signup()">Create Account</button>
+    <!-- ================= SIGNUP ================= -->
+    <div id="signupBox" class="hidden">
+      <input id="signupEmail" type="email" placeholder="Email">
+      <input id="signupPassword" type="password" placeholder="Password">
+      <button onclick="signup()">Create Account</button>
 
-    <div class="hint">
-      Already have an account?
-      <a onclick="showLogin()">Log in</a>
+      <div class="hint">
+        Already have an account?
+        <a onclick="showLogin()">Log in</a>
+      </div>
     </div>
-  </div>
 
-  <!-- ============== CHANGE PASSWORD ============== -->
-  <div id="changeBox" class="hidden">
-    <input id="changeEmail" type="email" placeholder="Email">
-    <input id="currentPassword" type="password" placeholder="Current password">
-    <input id="newPassword" type="password" placeholder="New password">
-    <button onclick="changePassword()">Change Password</button>
+    <!-- ============== CHANGE PASSWORD ============== -->
+    <div id="changeBox" class="hidden">
+      <input id="changeEmail" type="email" placeholder="Email">
+      <input id="currentPassword" type="password" placeholder="Current password">
+      <input id="newPassword" type="password" placeholder="New password">
+      <button onclick="changePassword()">Change Password</button>
 
-    <div class="hint">
-      <a onclick="showLogin()">← Back to login</a>
+      <div class="hint">
+        <a onclick="showLogin()">← Back to login</a>
+      </div>
     </div>
-  </div>
 
-  <div id="status" class="status"></div>
+    <div id="status" class="status"></div>
+  </div>
 </div>
 
 <!-- ================= SCRIPTS ================= -->
@@ -118,31 +176,16 @@
 <script src="/js/supabaseClient.js"></script>
 <script src="/js/auth.js"></script>
 
-<!-- ================= GLOBAL LOADER ================= -->
-<div id="globalLoader" style="
-  display:none;
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,0.3);
-  z-index:9999;
-  align-items:center;
-  justify-content:center;
-">
-  <div style="
-    width:40px;
-    height:40px;
-    border:4px solid #ddd;
-    border-top:4px solid #333;
-    border-radius:50%;
-    animation: spin 1s linear infinite;
-  "></div>
-</div>
+<script>
+  function closeAuth() {
+    const card = document.querySelector('.auth-card');
+    card.classList.add('closing');
 
-<style>
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-</style>
+    setTimeout(() => {
+      window.location.href = "/html/home.html";
+    }, 280);
+  }
+</script>
 
 </body>
 </html>
