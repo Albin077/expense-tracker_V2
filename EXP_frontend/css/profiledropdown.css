@@ -1,5 +1,4 @@
 /* Overlay */
-
 .sidebar-overlay {
   position: fixed;
   inset: 0;
@@ -8,12 +7,11 @@
   z-index: 999;
 }
 
-/* Floating Sidebar Box */
-
+/* Floating dropdown */
 .sidebar {
   position: fixed;
-  top: 80px;
-  right: 20px;
+  top: 64px;
+  right: 16px;
 
   width: 280px;
   max-height: 420px;
@@ -24,7 +22,7 @@
   border-radius: 16px;
   box-shadow: 0 10px 40px rgba(0,0,0,0.25);
 
-  transform: translateY(-20px);
+  transform: translateY(-10px);
   opacity: 0;
   transition: all 0.25s ease;
 
@@ -37,54 +35,31 @@
   opacity: 1;
 }
 
-/* Header */
-
-.sidebar-header {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 15px;
-}
-
 /* Avatar */
-
 .avatar {
-  width: 70px;
-  height: 70px;
+  width: 64px;
+  height: 64px;
   border-radius: 50%;
   object-fit: cover;
   border: 2px solid var(--border);
 }
 
-/* Username + gear */
-
-.sidebar-user {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 18px;
-  font-weight: 500;
-}
-
-/* Gear button */
-
+/* Gear */
 .gearBtn {
   background: transparent;
   border: none;
   cursor: pointer;
-  font-size: 18px;
+  font-size: 14px;
   color: var(--muted);
-  padding: 4px;
+  margin-top: 6px;
 }
 
 .gearBtn:hover {
   color: var(--primary);
 }
 
-/* Sidebar button spacing only (color comes from base.css) */
-
+/* Buttons inside dropdown */
 .sidebar button {
   width: 100%;
-  margin-top: 15px;
+  margin-top: 14px;
 }
