@@ -1,18 +1,25 @@
 <header class="topnav">
-  <!-- LEFT: PAGE TITLE -->
-  <div class="topnav-left">
-    <span id="pageTitle" class="page-title">Home</span>
+
+  <!-- ROW 1 -->
+  <div class="topnav-row topnav-row-1">
+    <div class="topnav-left">
+      <a href="home.html" class="home-icon">🏠</a>
+    </div>
+
+    <div class="topnav-right">
+      <button id="topRightBtn" class="profile-btn">
+        <span id="topAvatarFallback">👤</span>
+        <img id="topAvatar" style="display:none;" />
+      </button>
+    </div>
   </div>
 
-  <!-- CENTER: NAV -->
-  <nav class="topnav-center">
-    <a href="home.html" data-page="home">Home</a>
-    <a href="analytics.html" data-page="analytics">Analytics</a>
-    <a href="expenses.html" data-page="table">Table</a>
+  <!-- ROW 2 -->
+  <nav class="topnav-row topnav-row-2 topnav-center">
+    <a href="home.html" data-page="home" class="nav-link">Home</a>
+    <a href="analytics.html" data-page="analytics" class="nav-link">Analytics</a>
+    <a href="expenses.html" data-page="expenses" class="nav-link">Expenses</a>
+    <a href="income.html" data-page="income" class="nav-link">Income</a>
   </nav>
 
-  <!-- RIGHT: PROFILE -->
-  <div class="topnav-right">
-    <button id="topRightBtn" class="profile-btn">👤</button>
-  </div>
 </header>

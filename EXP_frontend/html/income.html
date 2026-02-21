@@ -1,100 +1,91 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta charset="UTF-8">
   <title>Income</title>
+
   <link rel="stylesheet" href="/css/base.css">
   <link rel="stylesheet" href="/css/topnav.css">
+  <link rel="stylesheet" href="/css/autocomplete.css">
+  <link rel="stylesheet" href="/css/responsive.css">
+  <link rel="stylesheet" href="/css/profiledropdown.css">
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="/js/supabaseClient.js"></script>
+  <script src="/js/topnav.js"></script>
   <script src="/js/income.js" defer></script>
 </head>
 <body>
-<div id="topnavContainer"></div>
+  <div id="topnavContainer"></div>
 
-<h2>💰 Income</h2>
+  <div class="table-container">
+    <header class="page-header">
+      <h2 class="section-title" style="margin:0;">💰 Income</h2>
+    </header>
 
-<a href="home.html">⬅ Back</a>
-<br><br>
+    <div class="filter-bar">
+      <div class="filter-group">
+        <input 
+          type="text" 
+          id="incomeSearch" 
+          placeholder="Search source..." 
+          oninput="loadIncome()"
+          style="width: 200px;"
+        />
+        <select onchange="setMonth(this.value)">
+          <option value="">All Months</option>
+          <option value="1">Jan</option><option value="2">Feb</option>
+          <option value="3">Mar</option><option value="4">Apr</option>
+          <option value="5">May</option><option value="6">Jun</option>
+          <option value="7">Jul</option><option value="8">Aug</option>
+          <option value="9">Sep</option><option value="10">Oct</option>
+          <option value="11">Nov</option><option value="12">Dec</option>
+        </select>
+      </div>
 
-<!-- SEARCH -->
-<input
-  type="text"
-  id="incomeSearch"
-  placeholder="Search source or comment..."
-  oninput="loadIncome()"
-/>
+      <div class="filter-group">
+        <button class="apply-btn" onclick="toggleSortPanel()">Sort ⚙</button>
+        <div id="sortPanel" style="display:none; display: flex; gap: 5px;">
+          <button class="pill-btn" onclick="setSort('date')">Date</button>
+          <button class="pill-btn" onclick="setSort('amount')">Amt</button>
+          <button class="pill-btn" onclick="toggleOrder()">⇅</button>
+        </div>
+      </div>
+    </div>
 
-<br><br>
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Source</th>
+            <th>Amount</th>
+            <th>Comment</th>
+            <th style="text-align: center;">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="incomeBody"></tbody>
+      </table>
+    </div>
+  </div>
 
-<!-- SORT TOGGLE -->
-<button onclick="toggleSortPanel()">Sort ⚙</button>
+  <div id="sidebarContainer"></div>
 
-<div id="sortPanel" style="display:none; margin-top:10px;">
-  <button onclick="setSort('date')">Date</button>
-  <button onclick="setSort('amount')">Amount</button>
-  <button onclick="toggleOrder()">Asc / Desc</button>
-</div>
+  <div id="globalLoader" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.2); z-index:9999; align-items:center; justify-content:center;">
+    <div style="width:40px; height:40px; border:4px solid #ddd; border-top:4px solid var(--accent); border-radius:50%; animation: spin 1s linear infinite;"></div>
+  </div>
 
-<br><br>
-
-<!-- MONTH FILTER -->
-<select onchange="setMonth(this.value)">
-  <option value="">All Months</option>
-  <option value="1">Jan</option>
-  <option value="2">Feb</option>
-  <option value="3">Mar</option>
-  <option value="4">Apr</option>
-  <option value="5">May</option>
-  <option value="6">Jun</option>
-  <option value="7">Jul</option>
-  <option value="8">Aug</option>
-  <option value="9">Sep</option>
-  <option value="10">Oct</option>
-  <option value="11">Nov</option>
-  <option value="12">Dec</option>
-</select>
-
-<br><br>
-
-<table border="1">
-  <thead>
-    <tr>
-      <th>Date</th>
-      <th>Source</th>
-      <th>Amount</th>
-      <th>Comment</th>
-      <th>Actions</th>
-    </tr>
-  </thead>
-  <tbody id="incomeBody"></tbody>
-</table>
-<!-- GLOBAL LOADING OVERLAY -->
-<div id="globalLoader" style="
-  display:none;
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,0.3);
-  z-index:9999;
-  align-items:center;
-  justify-content:center;
-">
-  <div style="
-    width:40px;
-    height:40px;
-    border:4px solid #ddd;
-    border-top:4px solid #333;
-    border-radius:50%;
-    animation: spin 1s linear infinite;
-  "></div>
-</div>
-
-<style>
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-</style>
-
+  <style>
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .pill-btn {
+      background: #f1f5f9;
+      border: 1px solid var(--border-color);
+      padding: 5px 10px;
+      border-radius: 8px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+  </style>
 </body>
 </html>

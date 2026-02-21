@@ -57,3 +57,35 @@ button {
     margin: auto;
   }
 }
+
+/* Add these to the bottom of responsive.css */
+
+/* Keep the page locked so it doesn't slide left/right */
+html, body {
+  overflow-x: hidden;
+  width: 100%;
+}
+
+/* The wrapper that lets the table scroll internally */
+.table-container {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch; /* Smooth scroll on iPhones */
+  margin-top: 10px;
+  border-radius: 8px;
+}
+
+/* Force inputs in the table to be a reasonable size on mobile */
+td input {
+  width: auto !important; 
+  min-width: 80px;
+  max-width: 120px;
+  margin-bottom: 0 !important; /* Overrides your base.css margin */
+  padding: 6px !important;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+}

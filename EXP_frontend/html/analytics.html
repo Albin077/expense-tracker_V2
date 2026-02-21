@@ -1,186 +1,111 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="../css/analytics.css">
-  <link rel="stylesheet" href="/css/responsive.css">
-  <meta charset="UTF-8">
-  <title>Income vs Expense</title>
-  <link rel="stylesheet" href="/css/base.css">
- <link rel="stylesheet" href="/css/topnav.css">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-  <script src="/js/supabaseClient.js"></script>
-  <a href="home.html">⬅ Back</a>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Financial Insights</title>
+    
+    <link rel="stylesheet" href="/css/base.css">
+    <link rel="stylesheet" href="/css/topnav.css">
+    <link rel="stylesheet" href="/css/profiledropdown.css">
+    <link rel="stylesheet" href="/css/analytics.css">
 
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f6f7fb;
-      padding: 20px;
-    }
-
-    .card {
-      background: white;
-      padding: 16px;
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0,0,0,.1);
-      max-width: 900px;
-      margin: auto;
-    }
-
-    .controls {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      margin-bottom: 15px;
-    }
-
-    select, button {
-      padding: 6px 10px;
-    }
-  </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="/js/supabaseClient.js"></script>
+    <script src="/js/topnav.js"></script>
 </head>
 
 <body>
 <div id="topnavContainer"></div>
-<div class="card">
-  <h2>📊 Income vs Expense</h2>
+<br> </br>
 
-  <div class="controls">
-    <select id="yearSelect"></select>
+<div class="analytics-shell">
 
-    <select id="rangeSelect">
-      <option value="12">Full Year</option>
-      <option value="6">Last 6 Months</option>
-      <option value="3">Last 3 Months</option>
-    </select>
+    <div class="chart-card">
+        <div class="card-title">📊 Income vs Expense Trend</div>
+        <div class="controls-row">
+            <select id="yearSelect"></select>
+            <select id="rangeSelect" onchange="loadChart()">
+                <option value="12">Full Year</option>
+                <option value="6">Last 6 Months</option>
+                <option value="3">Last 3 Months</option>
+            </select>
+            <select id="typeSelect" onchange="loadChart()">
+                <option value="bar">Bar Chart</option>
+                <option value="line">Line Chart</option>
+            </select>
+        </div>
+        <div class="chart-wrapper">
+            <canvas id="incomeExpenseChart"></canvas>
+        </div>
+    </div>
 
-    <select id="typeSelect">
-      <option value="bar">Bar</option>
-      <option value="line">Line</option>
-    </select>
+    <div class="chart-card">
+        <div class="card-title">💸 Expense by Category</div>
+        <div class="controls-row">
+            <input type="date" id="catFrom">
+            <input type="date" id="catTo">
+            <select id="catType" onchange="loadCategoryChart()">
+                <option value="pie">Pie</option>
+                <option value="doughnut">Doughnut</option>
+                <option value="bar">Bar</option>
+                <option value="radar">Radar</option>
+            </select>
+            <button class="action-btn" onclick="loadCategoryChart()">Apply</button>
+        </div>
+        <div class="chart-wrapper">
+            <canvas id="categoryChart"></canvas>
+        </div>
+    </div>
 
-    <button onclick="loadChart()">Apply</button>
-  </div>
+    <div class="chart-card">
+        <div class="card-header-flex">
+            <div class="card-title">🔍 Keyword Search Trend</div>
+            <div id="kwTotalDisplay" class="total-badge"></div>
+        </div>
+        <div class="controls-row">
+            <input id="kwInput" placeholder="e.g. food, petrol">
+            <input type="date" id="kwFrom">
+            <input type="date" id="kwTo">
+            <select id="kwType">
+                <option value="bar">Bar</option>
+                <option value="line">Line</option>
+            </select>
+            <button class="action-btn" onclick="loadKeywordRangeChart()">Search</button>
+        </div>
+        <div class="chart-wrapper">
+            <canvas id="keywordRangeChart"></canvas>
+        </div>
+    </div>
 
-  <canvas id="incomeExpenseChart"></canvas>
+    <section class="insights-container">
+        <h2>Executive Summary</h2>
+        <div class="insights-flex">
+            <div class="insight-tile">
+                <h3>Monthly Status</h3>
+                <p id="incomeExpenseText"></p>
+            </div>
+            <div class="insight-tile">
+                <h3>Spending Alerts</h3>
+                <div id="spendingIncreaseText"></div>
+            </div>
+            <div class="insight-tile wide">
+                <h3>Category Distribution</h3>
+                <div class="overflow-table">
+                    <table class="classic-dark-table">
+                        <thead>
+                            <tr><th>Category</th><th>Amount</th><th>% of Income</th></tr>
+                        </thead>
+                        <tbody id="avgExpenseTable"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </section>
 </div>
 
-<!-- ===============================
-     EXPENSE BY CATEGORY
-================================ -->
-<div class="card" style="margin-top:30px">
-  <h2>💸 Expense by Category</h2>
-
-  <div class="controls">
-    <input type="date" id="catFrom">
-    <input type="date" id="catTo">
-
-    <select id="catType">
-      <option value="pie">Pie</option>
-      <option value="bar">Bar</option>
-      <option value="doughnut">Doughnut</option>
-    </select>
-
-    <button onclick="loadCategoryChart()">Apply</button>
-  </div>
-
-  <canvas id="categoryChart"></canvas>
-</div>
-
-
-<!-- ===============================
-     KEYWORD SPENDING TREND
-================================ -->
-<div class="card" style="margin-top:30px">
-  <h2>🔍 Keyword Spending Trend</h2>
-
-  <div class="controls">
-    <input id="kwInput" placeholder="petrol / food / hospital">
-
-    <input type="date" id="kwFrom">
-    <input type="date" id="kwTo">
-
-    <select id="kwType">
-      <option value="bar">Bar</option>
-      <option value="line">Line</option>
-    </select>
-
-    <button onclick="loadKeywordRangeChart()">Apply</button>
-  </div>
-
-  <canvas id="keywordRangeChart"></canvas>
-</div>
-
-<!-- =========================
-     INSIGHTS PANEL
-========================= -->
-<section class="insights-panel">
-  <h2>Insights</h2>
-
-  <!-- Income vs Expense -->
-  <div class="insight-card">
-    <h3>Income vs Expense</h3>
-    <p id="incomeExpenseText"></p>
-  </div>
-
-  <!-- Spending Increase -->
-  <div class="insight-card">
-    <h3>Spending Increase</h3>
-    <p id="spendingIncreaseText"></p>
-  </div>
-
-  <!-- New Categories -->
-  <div class="insight-card">
-    <h3>New Categories</h3>
-    <p id="newCategoryText"></p>
-  </div>
-
-  <!-- Average Monthly Comparison -->
-  <div class="insight-card">
-    <h3>Average Monthly Expense vs Income</h3>
-    <table class="insight-table">
-      <thead>
-        <tr>
-          <th>Category</th>
-          <th>Avg Expense</th>
-          <th>% of Income</th>
-        </tr>
-      </thead>
-      <tbody id="avgExpenseTable"></tbody>
-    </table>
-  </div>
-</section>
-
+<div id="globalLoader"><div class="spinner"></div></div>
 <script src="/js/analytics.js"></script>
-
-<!-- GLOBAL LOADING OVERLAY -->
-<div id="globalLoader" style="
-  display:none;
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,0.3);
-  z-index:9999;
-  align-items:center;
-  justify-content:center;
-">
-  <div style="
-    width:40px;
-    height:40px;
-    border:4px solid #ddd;
-    border-top:4px solid #333;
-    border-radius:50%;
-    animation: spin 1s linear infinite;
-  "></div>
-</div>
-
-<style>
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-</style>
-
 </body>
 </html>

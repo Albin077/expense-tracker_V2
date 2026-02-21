@@ -1,388 +1,345 @@
 const sb = window.supabaseClient;
 const API = "http://127.0.0.1:8000";
 
-/* =========================
-   AUTH
-========================= */
-async function getHeaders() {
-  const { data: { session } } = await sb.auth.getSession();
-  if (!session) {
-    location.href = "login.html";
-    return null;
-  }
-  return { Authorization: `Bearer ${session.access_token}` };
+// --- CLASSY SOLID PALETTE (High Visibility) ---
+const classyColors = {
+    primary: '#7B96D4',   // Faded Slate Blue
+    secondary: '#D47B96', // Faded Rose
+    accent: '#7BD4B9',    // Faded Mint
+    highlight: '#D4B97B', // Faded Ochre
+    muted: '#A8A8A8',     // Faded Grey
+    white: '#ffffff',
+    grid: '#444444'
+};
+
+// --- GLOBAL STABLE CONFIG (Zero Animations) ---
+if (window.Chart) {
+    Chart.defaults.font.family = "'Segoe UI', Roboto, Helvetica, Arial, sans-serif";
+    Chart.defaults.color = '#e0e0e0';
+    
+    // Explicitly disable all animation loops to prevent "this._fn" errors
+    Chart.defaults.animation = false;
+    Chart.defaults.transitions = {
+        active: { animation: { duration: 0 } },
+        resize: { animation: { duration: 0 } }
+    };
+
+    Chart.defaults.interaction = {
+        mode: 'index',
+        intersect: false,
+    };
 }
 
 /* =========================
-   CHART 1 — INCOME vs EXPENSE (UNCHANGED)
+   AUTH & HEADERS
 ========================= */
-let incomeExpenseChart;
+async function getHeaders() {
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) {
+        location.href = "login.html";
+        return null;
+    }
+    return { Authorization: `Bearer ${session.access_token}` };
+}
+
+/* =========================
+   CLEANUP UTILITY
+========================= */
+function safeDestroy(chartInstance) {
+    if (chartInstance) {
+        chartInstance.destroy();
+    }
+}
+
+/* =========================
+   CHART 1 — INCOME vs EXPENSE
+========================= */
+let incomeExpenseChart = null;
 
 function fillYears() {
-  const yearSelect = document.getElementById("yearSelect");
-  const now = new Date().getFullYear();
-  for (let y = now - 5; y <= now; y++) {
-    yearSelect.add(new Option(y, y));
-  }
-  yearSelect.value = now;
+    const yearSelect = document.getElementById("yearSelect");
+    const now = new Date().getFullYear();
+    for (let y = now - 5; y <= now; y++) {
+        yearSelect.add(new Option(y, y));
+    }
+    yearSelect.value = now;
 }
 
 async function loadChart() {
-  const headers = await getHeaders();
-  if (!headers) return;
+    const headers = await getHeaders();
+    if (!headers) return;
 
-  const year = yearSelect.value;
-  const range = parseInt(rangeSelect.value);
-  const type = typeSelect.value;
+    const res = await fetch(`${API}/analytics/chart/yearly-trend?year=${yearSelect.value}`, { headers });
+    const data = await res.json();
+    const range = parseInt(rangeSelect.value);
 
-  const res = await fetch(
-    `${API}/analytics/chart/yearly-trend?year=${year}`,
-    { headers }
-  );
-  const data = await res.json();
+    safeDestroy(incomeExpenseChart);
 
-  incomeExpenseChart?.destroy();
-  incomeExpenseChart = new Chart(
-    document.getElementById("incomeExpenseChart"),
-    {
-      type,
-      data: {
-        labels: data.labels.slice(-range),
-        datasets: [
-          { label: "Income", data: data.income.slice(-range) },
-          { label: "Expense", data: data.expense.slice(-range) }
-        ]
-      }
-    }
-  );
+    const ctx = document.getElementById("incomeExpenseChart").getContext('2d');
+    incomeExpenseChart = new Chart(ctx, {
+        type: typeSelect.value,
+        data: {
+            labels: data.labels.slice(-range),
+            datasets: [
+                { 
+                    label: "Income", 
+                    data: data.income.slice(-range), 
+                    backgroundColor: classyColors.primary, 
+                    borderColor: classyColors.primary, 
+                    borderRadius: 8,
+                    tension: 0
+                },
+                { 
+                    label: "Expense", 
+                    data: data.expense.slice(-range), 
+                    backgroundColor: classyColors.secondary, 
+                    borderColor: classyColors.secondary, 
+                    borderRadius: 8,
+                    tension: 0
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: { beginAtZero: true, grid: { color: classyColors.grid } },
+                x: { grid: { display: false } }
+            }
+        }
+    });
 }
 
 /* =========================
-   CHART 2 — EXPENSE BY CATEGORY (DATE RANGE)
+   CHART 2 — CATEGORY (Radar Fix)
 ========================= */
-let categoryChart;
+let categoryChart = null;
 
 async function loadCategoryChart() {
-  const headers = await getHeaders();
-  if (!headers) return;
+    const headers = await getHeaders();
+    if (!headers) return;
 
-  const fromDate = document.getElementById("catFrom").value;
-  const toDate = document.getElementById("catTo").value;
-  const type = document.getElementById("catType").value;
+    const fromDate = document.getElementById("catFrom").value;
+    const toDate = document.getElementById("catTo").value;
+    const type = document.getElementById("catType").value;
 
-  if (!fromDate || !toDate) {
-    alert("Select date range");
-    return;
-  }
+    const res = await fetch(`${API}/analytics/chart/expense-category-range?from_date=${fromDate}&to_date=${toDate}`, { headers });
+    const data = await res.json();
 
-  const res = await fetch(
-    `${API}/analytics/chart/expense-category-range?from_date=${fromDate}&to_date=${toDate}`,
-    { headers }
-  );
+    safeDestroy(categoryChart);
 
-  const data = await res.json();
+    const isCircular = (type === 'pie' || type === 'doughnut' || type === 'radar');
 
-  categoryChart?.destroy();
-  categoryChart = new Chart(
-    document.getElementById("categoryChart"),
-    {
-      type,
-      data: {
-        labels: data.labels,
-        datasets: [{
-          label: "Expenses",
-          data: data.data
-        }]
-      }
-    }
-  );
+    categoryChart = new Chart(document.getElementById("categoryChart"), {
+        type: type,
+        data: {
+            labels: data.labels,
+            datasets: [{
+                label: "Expenses",
+                data: data.data,
+                backgroundColor: type === 'radar' 
+                    ? 'rgba(123, 150, 212, 0.6)' 
+                    : [classyColors.primary, classyColors.secondary, classyColors.accent, classyColors.highlight, classyColors.muted],
+                borderColor: '#ffffff',
+                borderWidth: 2,
+                pointBackgroundColor: '#ffffff',
+                pointRadius: 5
+            }]
+        },
+        options: { 
+            responsive: true, 
+            maintainAspectRatio: false,
+            scales: isCircular ? {
+                r: { 
+                    display: type === 'radar',
+                    grid: { color: '#666' },
+                    angleLines: { color: '#666' },
+                    pointLabels: { color: '#ffffff', font: { size: 12, weight: 'bold' } }
+                },
+                x: { display: false }, y: { display: false }
+            } : {
+                y: { beginAtZero: true, grid: { color: classyColors.grid } }
+            },
+            plugins: {
+                legend: { position: isCircular ? 'right' : 'top' }
+            }
+        }
+    });
 }
 
 /* =========================
-   CHART 3 — KEYWORD RANGE (UNCHANGED)
+   CHART 3 — KEYWORD (With Total Calculation)
 ========================= */
-let keywordChart;
+let keywordChart = null;
 
 async function loadKeywordRangeChart() {
-  const headers = await getHeaders();
-  if (!headers) return;
+    const headers = await getHeaders();
+    const keyword = kwInput.value.trim();
+    if (!headers || !keyword) return;
 
-  const keyword = kwInput.value.trim();
-  const fromDate = kwFrom.value;
-  const toDate = kwTo.value;
-  const type = kwType.value;
+    const res = await fetch(`${API}/analytics/chart/keyword-range-trend?keyword=${encodeURIComponent(keyword)}&from_date=${kwFrom.value}&to_date=${kwTo.value}`, { headers });
+    const data = await res.json();
 
-  if (!keyword || !fromDate || !toDate) {
-    alert("Keyword and date range required");
-    return;
-  }
-
-  const res = await fetch(
-    `${API}/analytics/chart/keyword-range-trend?keyword=${encodeURIComponent(keyword)}&from_date=${fromDate}&to_date=${toDate}`,
-    { headers }
-  );
-  const data = await res.json();
-
-  keywordChart?.destroy();
-  keywordChart = new Chart(
-    document.getElementById("keywordRangeChart"),
-    {
-      type,
-      data: {
-        labels: data.labels,
-        datasets: [{
-          label: `Spending on "${keyword}"`,
-          data: data.data
-        }]
-      }
+    // CALC TOTAL: Sum up all values in the range
+    const totalAmount = data.data.reduce((sum, val) => sum + Number(val), 0);
+    const totalDisplay = document.getElementById("kwTotalDisplay");
+    if (totalDisplay) {
+        totalDisplay.innerText = `Total: ₹${totalAmount.toLocaleString()}`;
     }
-  );
-}
-function setDefaultCategoryDates() {
-  const to = new Date();
-  const from = new Date();
-  from.setMonth(from.getMonth() - 1);
 
-  document.getElementById("catFrom").value =
-    from.toISOString().split("T")[0];
-
-  document.getElementById("catTo").value =
-    to.toISOString().split("T")[0];
+    safeDestroy(keywordChart);
+    keywordChart = new Chart(document.getElementById("keywordRangeChart"), {
+        type: kwType.value,
+        data: {
+            labels: data.labels,
+            datasets: [{
+                label: `Spending on "${keyword}"`,
+                data: data.data,
+                backgroundColor: classyColors.highlight,
+                borderColor: classyColors.highlight,
+                tension: 0,
+                fill: kwType.value === 'line',
+                pointRadius: 5
+            }]
+        },
+        options: { 
+            responsive: true, 
+            maintainAspectRatio: false,
+            scales: {
+                y: { beginAtZero: true, grid: { color: classyColors.grid } },
+                x: { grid: { display: false } }
+            }
+        }
+    });
 }
+
 /* =========================
-   INSIGHTS PANEL
+   INSIGHTS & UTILS
 ========================= */
-async function loadInsights() {
-  const headers = await getHeaders();
-  if (!headers) return;
-
-  const year = document.getElementById("yearSelect").value;
-  const month = new Date().getMonth() + 1; // current month
-
-  const res = await fetch(
-    `${API}/analytics/insights?month=${month}&year=${year}`,
-    { headers }
-  );
-
-  const data = await res.json();
-
-  // ---------- Status ----------
-  document.getElementById("insightStatus").innerText = data.status;
-
-  // ---------- Increased categories ----------
-  const incList = document.getElementById("increaseList");
-  incList.innerHTML = "";
-
-  if (data.increased_categories.length === 0) {
-    incList.innerHTML = "<li>No category increased</li>";
-  } else {
-    data.increased_categories.forEach(i => {
-      const li = document.createElement("li");
-      li.className = "increase";
-      li.innerText = `${i.category} ↑ ${i.percent}% vs last month`;
-      incList.appendChild(li);
-    });
-  }
-
-  // ---------- New categories ----------
-  const newList = document.getElementById("newCategoryList");
-  newList.innerHTML = "";
-
-  if (data.new_categories.length === 0) {
-    newList.innerHTML = "<li>No new categories</li>";
-  } else {
-    data.new_categories.forEach(c => {
-      const li = document.createElement("li");
-      li.className = "new";
-      li.innerText = `🆕 ${c}`;
-      newList.appendChild(li);
-    });
-  }
-
-  // ---------- Average table ----------
-  const tbody = document.querySelector("#avgTable tbody");
-  tbody.innerHTML = "";
-
-  data.avg_table.forEach(r => {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${r.category}</td>
-      <td>${r.avg_expense}</td>
-      <td>${r.percent_of_income}%</td>
-    `;
-    tbody.appendChild(tr);
-  });
-}
-function getMonthRange(offset = 0) {
-  const now = new Date();
-  const first = new Date(now.getFullYear(), now.getMonth() + offset, 1);
-  const last = new Date(now.getFullYear(), now.getMonth() + offset + 1, 0);
-
-  return {
-    from: first.toISOString().split("T")[0],
-    to: last.toISOString().split("T")[0]
-  };
-}
 
 async function loadIncomeExpenseInsight() {
-  const headers = await getHeaders();
-  if (!headers) return;
-
-  const year = new Date().getFullYear();
-  const month = new Date().getMonth();
-
-  const res = await fetch(
-    `${API}/analytics/chart/yearly-trend?year=${year}`,
-    { headers }
-  );
-  const data = await res.json();
-
-  const income = data.income[month];
-  const expense = data.expense[month];
-
-  const el = document.getElementById("incomeExpenseText");
-
-  if (expense > income) {
-    el.innerHTML = `Expenses exceeded income by ₹${expense - income}`;
-    el.className = "text-red";
-  } else {
-    el.innerHTML = `Income exceeded expenses by ₹${income - expense}`;
-    el.className = "text-green";
-  }
+    const headers = await getHeaders();
+    if (!headers) return;
+    const year = new Date().getFullYear();
+    const month = new Date().getMonth();
+    const res = await fetch(`${API}/analytics/chart/yearly-trend?year=${year}`, { headers });
+    const data = await res.json();
+    const el = document.getElementById("incomeExpenseText");
+    const diff = data.income[month] - data.expense[month];
+    
+    if (el) {
+        el.innerHTML = diff < 0 
+            ? `Expenses exceeded income by <span class="text-red">₹${Math.abs(diff)}</span>` 
+            : `Income exceeded expenses by <span class="text-green">₹${diff}</span>`;
+    }
 }
 
 async function loadSpendingIncreaseInsight() {
-  const headers = await getHeaders();
-  if (!headers) return;
+    const headers = await getHeaders();
+    if (!headers) return;
+    const now = new Date();
+    const curMonth = now.getMonth() + 1;
+    const curYear = now.getFullYear();
+    const prevMonth = curMonth === 1 ? 12 : curMonth - 1;
+    const prevYear = curMonth === 1 ? curYear - 1 : curYear;
 
-  const now = new Date();
-  const curMonth = now.getMonth() + 1;
-  const curYear = now.getFullYear();
+    const [curRes, prevRes] = await Promise.all([
+        fetch(`${API}/analytics/chart/monthly-expense-category?month=${curMonth}&year=${curYear}`, { headers }),
+        fetch(`${API}/analytics/chart/monthly-expense-category?month=${prevMonth}&year=${prevYear}` , { headers })
+    ]);
 
-  const prevMonth = curMonth === 1 ? 12 : curMonth - 1;
-  const prevYear = curMonth === 1 ? curYear - 1 : curYear;
+    const curData = await curRes.json();
+    const prevData = await prevRes.json();
+    const prevMap = {};
+    prevData.labels.forEach((c, i) => { prevMap[c] = Number(prevData.data[i]); });
 
-  const [curRes, prevRes] = await Promise.all([
-    fetch(`${API}/analytics/chart/monthly-expense-category?month=${curMonth}&year=${curYear}`, { headers }),
-    fetch(`${API}/analytics/chart/monthly-expense-category?month=${prevMonth}&year=${prevYear}`, { headers })
-  ]);
+    const increases = [];
+    curData.labels.forEach((c, i) => {
+        if (prevMap.hasOwnProperty(c)) {
+            const prevAmount = prevMap[c];
+            const currAmount = Number(curData.data[i]);
+            if (currAmount > prevAmount && prevAmount > 0) {
+                const pct = ((currAmount - prevAmount) / prevAmount) * 100;
+                increases.push(`${c} ↑ ${pct.toFixed(1)}%`);
+            }
+        }
+    });
 
-  const curData = await curRes.json();
-  const prevData = await prevRes.json();
-
-  const prevMap = {};
-  prevData.labels.forEach((c, i) => {
-    prevMap[c] = Number(prevData.data[i]); // ✅ force number
-  });
-
-  const increases = [];
-
-  curData.labels.forEach((c, i) => {
-    if (!prevMap.hasOwnProperty(c)) return; // ❌ skip new categories
-
-    const prevAmount = prevMap[c];
-    const currAmount = Number(curData.data[i]);
-
-    // ❌ ignore zero or invalid previous values
-    if (!prevAmount || prevAmount <= 0) return;
-
-    if (currAmount > prevAmount) {
-      const pct = ((currAmount - prevAmount) / prevAmount) * 100;
-      increases.push(`${c} ↑ ${pct.toFixed(1)}% vs last month`);
+    const el = document.getElementById("spendingIncreaseText");
+    if (el) {
+        el.innerHTML = increases.length
+            ? increases.map(i => `<div class="negative text-red">${i} vs last month</div>`).join("")
+            : `<span style="color:#888">Stability maintained this month</span>`;
     }
-  });
-
-  const el = document.getElementById("spendingIncreaseText"); // ✅ correct ID
-
-  el.innerHTML = increases.length
-    ? increases.map(i => `<div class="negative">${i}</div>`).join("")
-    : `<span class="muted">No category increased compared to last month</span>`;
-}
-
-
-
-
-async function loadNewCategoryInsight() {
-  const headers = await getHeaders();
-  if (!headers) return;
-
-  const cur = getMonthRange(0);
-  const prev = getMonthRange(-1);
-
-  const curData = await fetch(
-    `${API}/analytics/chart/expense-category-range?from_date=${cur.from}&to_date=${cur.to}`,
-    { headers }
-  ).then(r => r.json());
-
-  const prevData = await fetch(
-    `${API}/analytics/chart/expense-category-range?from_date=${prev.from}&to_date=${prev.to}`,
-    { headers }
-  ).then(r => r.json());
-
-  const newCats = curData.labels.filter(
-    c => !prevData.labels.includes(c)
-  );
-
-  document.getElementById("newCategoryText").innerHTML =
-    newCats.length
-      ? `New category added: ${newCats.join(", ")}`
-      : "No new categories this month";
 }
 
 async function loadAvgExpenseTable() {
-  const headers = await getHeaders();
-  if (!headers) return;
+    const headers = await getHeaders();
+    if (!headers) return;
+    const year = new Date().getFullYear();
+    const month = new Date().getMonth() + 1;
 
-  const year = new Date().getFullYear();
-  const month = new Date().getMonth() + 1;
+    const [catRes, yearRes] = await Promise.all([
+        fetch(`${API}/analytics/chart/monthly-expense-category?month=${month}&year=${year}`, { headers }),
+        fetch(`${API}/analytics/chart/yearly-trend?year=${year}`, { headers })
+    ]);
 
-  const catRes = await fetch(
-    `${API}/analytics/chart/monthly-expense-category?month=${month}&year=${year}`,
-    { headers }
-  );
-  const catData = await catRes.json();
+    const catData = await catRes.json();
+    const yearData = await yearRes.json();
+    const income = yearData.income[new Date().getMonth()];
+    const tbody = document.getElementById("avgExpenseTable");
 
-  const yearRes = await fetch(
-    `${API}/analytics/chart/yearly-trend?year=${year}`,
-    { headers }
-  );
-  const yearData = await yearRes.json();
-
-  const income = yearData.income[new Date().getMonth()];
-  const tbody = document.getElementById("avgExpenseTable");
-
-  tbody.innerHTML = "";
-
-  catData.labels.forEach((cat, i) => {
-    const amt = catData.data[i];
-    const pct = income ? ((amt / income) * 100).toFixed(1) : 0;
-
-    tbody.innerHTML += `
-      <tr>
-        <td>${cat}</td>
-        <td>₹${amt}</td>
-        <td>${pct}%</td>
-      </tr>
-    `;
-  });
+    if (tbody) {
+        tbody.innerHTML = "";
+        catData.labels.forEach((cat, i) => {
+            const amt = catData.data[i];
+            const pct = income ? ((amt / income) * 100).toFixed(1) : 0;
+            tbody.innerHTML += `
+                <tr>
+                    <td>${cat}</td>
+                    <td>₹${amt}</td>
+                    <td>${pct}%</td>
+                </tr>`;
+        });
+    }
 }
 
+function setDefaultCategoryDates() {
+    const d = new Date();
+    const toStr = d.toISOString().split("T")[0];
+    d.setMonth(d.getMonth() - 1);
+    const fromStr = d.toISOString().split("T")[0];
+    
+    document.getElementById("catFrom").value = fromStr;
+    document.getElementById("catTo").value = toStr;
+    document.getElementById("kwFrom").value = fromStr;
+    document.getElementById("kwTo").value = toStr;
+}
+
+function showLoader() { document.getElementById("globalLoader").style.display = "flex"; }
+function hideLoader() { document.getElementById("globalLoader").style.display = "none"; }
 
 /* =========================
-   INIT
+   INITIALIZATION
 ========================= */
 document.addEventListener("DOMContentLoaded", async () => {
-  await disableWhileLoading({ disabled: false }, async () => {
-    fillYears();
-    await loadChart();
+    if (typeof loadTopNav === "function") await loadTopNav("analytics");
+    showLoader();
 
-    setDefaultCategoryDates();  // 👈 MUST be before loadCategoryChart
-    await loadCategoryChart();
-
-    await loadIncomeExpenseInsight();
-    await loadSpendingIncreaseInsight();
-    await loadNewCategoryInsight();
-    await loadAvgExpenseTable();
-  });
+    try {
+        fillYears();
+        setDefaultCategoryDates();
+        
+        // Parallel load for efficiency
+        await Promise.all([
+            loadChart(),
+            loadCategoryChart(),
+            loadIncomeExpenseInsight(),
+            loadSpendingIncreaseInsight(),
+            loadAvgExpenseTable()
+        ]);
+    } finally {
+        // Slight delay to ensure charts are fully rendered before hiding loader
+        setTimeout(hideLoader, 500);
+    }
 });
-

@@ -1,240 +1,173 @@
 const sb = window.supabaseClient;
+const API = "http://127.0.0.1:8000";
 
 /* ---------------------------
-   AUTH GUARD
+   HELPERS (Essential - do not remove)
 ---------------------------- */
+function showLoader() {
+    const l = document.getElementById("globalLoader");
+    if (l) l.style.display = "flex";
+}
+
+function hideLoader() {
+    const l = document.getElementById("globalLoader");
+    if (l) l.style.display = "none";
+}
+
+async function disableWhileLoading(btn, fn) {
+    if (btn) {
+        btn.disabled = true;
+        btn.dataset.originalText = btn.innerText;
+        btn.innerText = "Loading...";
+    }
+    showLoader();
+    try {
+        await fn();
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerText = btn.dataset.originalText || "Submit";
+        }
+        hideLoader();
+    }
+}
+
 async function requireLogin() {
-  const { data: { session } } = await sb.auth.getSession();
-  if (!session) {
-    location.href = "login.html";
-    return null;
-  }
-  return session;
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) {
+        location.href = "login.html";
+        return null;
+    }
+    return session;
 }
 
 /* ---------------------------
-   LOAD EXPENSES
+   LOAD DATA
 ---------------------------- */
 async function loadExpenses(params = {}) {
-  const session = await requireLogin();
-  if (!session) return;
+    const session = await requireLogin();
+    if (!session) return;
 
-  const query = new URLSearchParams(params).toString();
+    // Remove empty params to prevent 422 errors
+    Object.keys(params).forEach(key => !params[key] && delete params[key]);
+    const query = new URLSearchParams(params).toString();
 
-  const res = await fetch(
-    `http://127.0.0.1:8000/expenses?${query}`,
-    {
-      headers: {
-        Authorization: `Bearer ${session.access_token}`,
-      },
+    const res = await fetch(`${API}/expenses?${query}`, {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+    });
+
+    const rows = await res.json();
+    const tbody = document.getElementById("expenseBody");
+    if (!tbody) return;
+    tbody.innerHTML = "";
+
+    // Fix: Ensure rows is an array
+    if (Array.isArray(rows)) {
+        rows.forEach((r) => {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td><input type="date" id="date-${r[0]}" value="${r[1] ?? ""}"></td>
+                <td><input id="cat-${r[0]}" value="${r[2] ?? ""}"></td>
+                <td><input type="number" id="amt-${r[0]}" value="${r[3] ?? ""}"></td>
+                <td><input id="com-${r[0]}" value="${r[4] ?? ""}"></td>
+                <td style="text-align: center; white-space: nowrap;">
+                    <button class="action-btn" onclick="updateExpense(${r[0]})">💾</button>
+                    <button class="action-btn" onclick="deleteExpense(${r[0]})">🗑</button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
     }
-  );
 
-  const rows = await res.json();
-  const tbody = document.getElementById("expenseBody");
-  tbody.innerHTML = "";
-
-  rows.forEach((r) => {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td><input type="date" id="date-${r[0]}" value="${r[1] ?? ""}"></td>
-      <td><input id="cat-${r[0]}" value="${r[2] ?? ""}"></td>
-      <td><input type="number" id="amt-${r[0]}" value="${r[3] ?? ""}"></td>
-      <td><input id="com-${r[0]}" value="${r[4] ?? ""}"></td>
-      <td>
-        <button onclick="updateExpense(${r[0]})">💾</button>
-        <button onclick="deleteExpense(${r[0]})">🗑</button>
-      </td>
+    const addRow = document.createElement("tr");
+    addRow.style.background = "#fcfcfc";
+    addRow.innerHTML = `
+        <td><input type="date" id="new-exp-date"></td>
+        <td><input id="new-exp-cat" placeholder="Cat..."></td>
+        <td><input type="number" id="new-exp-amt" placeholder="0"></td>
+        <td><input id="new-exp-com" placeholder="..."></td>
+        <td style="text-align: center;"><button class="action-btn" onclick="addExpense()">➕</button></td>
     `;
-    tbody.appendChild(tr);
-  });
-
-  // Add row
-  const addRow = document.createElement("tr");
-  addRow.innerHTML = `
-    <td><input type="date" id="new-exp-date"></td>
-    <td><input id="new-exp-cat"></td>
-    <td><input type="number" id="new-exp-amt"></td>
-    <td><input id="new-exp-com"></td>
-    <td><button onclick="addExpense()">➕</button></td>
-  `;
-  tbody.appendChild(addRow);
+    tbody.appendChild(addRow);
 }
 
-/* ---------------------------
-   ADD EXPENSE
----------------------------- */
 async function addExpense() {
-  const button = event.target;
-
-  await disableWhileLoading(button, async () => {
-    const session = await requireLogin();
-    if (!session) return;
-
-    const res = await fetch("http://127.0.0.1:8000/expenses", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${session.access_token}`,
-      },
-      body: JSON.stringify({
-        expense_date: document.getElementById("new-exp-date").value,
-        category: document.getElementById("new-exp-cat").value,
-        amount: Number(document.getElementById("new-exp-amt").value),
-        comment: document.getElementById("new-exp-com").value,
-      }),
+    const button = event.target;
+    await disableWhileLoading(button, async () => {
+        const session = await requireLogin();
+        const res = await fetch(`${API}/expenses`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
+            body: JSON.stringify({
+                expense_date: document.getElementById("new-exp-date").value,
+                category: document.getElementById("new-exp-cat").value,
+                amount: Number(document.getElementById("new-exp-amt").value),
+                comment: document.getElementById("new-exp-com").value,
+            }),
+        });
+        if (res.ok) { await loadExpenses(); await loadSpendingIncreaseInsight(); }
     });
-
-    if (res.status === 401) {
-      alert("Session expired. Please login again.");
-      location.href = "login.html";
-      return;
-    }
-
-    if (!res.ok) {
-      alert("Failed to add expense");
-      return;
-    }
-
-    loadExpenses();
-    loadSpendingIncreaseInsight();
-  });
 }
 
-/* ---------------------------
-   UPDATE EXPENSE
----------------------------- */
 async function updateExpense(id) {
-  const button = event.target;
-
-  await disableWhileLoading(button, async () => {
-    const session = await requireLogin();
-    if (!session) return;
-
-    const res = await fetch(`http://127.0.0.1:8000/expenses/${id}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${session.access_token}`,
-      },
-      body: JSON.stringify({
-        expense_date: document.getElementById(`date-${id}`).value,
-        category: document.getElementById(`cat-${id}`).value,
-        amount: Number(document.getElementById(`amt-${id}`).value),
-        comment: document.getElementById(`com-${id}`).value,
-      }),
+    const button = event.target;
+    await disableWhileLoading(button, async () => {
+        const session = await requireLogin();
+        const res = await fetch(`${API}/expenses/${id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
+            body: JSON.stringify({
+                expense_date: document.getElementById(`date-${id}`).value,
+                category: document.getElementById(`cat-${id}`).value,
+                amount: Number(document.getElementById(`amt-${id}`).value),
+                comment: document.getElementById(`com-${id}`).value,
+            }),
+        });
+        if (res.ok) await loadSpendingIncreaseInsight();
     });
-
-    if (res.status === 401) {
-      alert("Session expired. Please login again.");
-      location.href = "login.html";
-      return;
-    }
-
-    if (!res.ok) {
-      alert("Failed to update expense");
-      return;
-    }
-
-    loadSpendingIncreaseInsight();
-  });
 }
 
-/* ---------------------------
-   DELETE EXPENSE
----------------------------- */
 async function deleteExpense(id) {
-  if (!confirm("Delete expense?")) return;
-
-  const button = event.target;
-
-  await disableWhileLoading(button, async () => {
-    const session = await requireLogin();
-    if (!session) return;
-
-    const res = await fetch(`http://127.0.0.1:8000/expenses/${id}`, {
-      method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${session.access_token}`,
-      },
+    if (!confirm("Delete expense?")) return;
+    const button = event.target;
+    await disableWhileLoading(button, async () => {
+        const session = await requireLogin();
+        const res = await fetch(`${API}/expenses/${id}`, {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${session.access_token}` },
+        });
+        if (res.ok) { await loadExpenses(); await loadSpendingIncreaseInsight(); }
     });
-
-    if (res.status === 401) {
-      alert("Session expired. Please login again.");
-      location.href = "login.html";
-      return;
-    }
-
-    if (!res.ok) {
-      alert("Failed to delete expense");
-      return;
-    }
-
-    loadExpenses();
-    loadSpendingIncreaseInsight();
-  });
 }
 
-
-/* =====================================================
-   📊 SPENDING INCREASE INSIGHT
-===================================================== */
 async function loadSpendingIncreaseInsight() {
-  const session = await requireLogin();
-  if (!session) return;
-
-  const res = await fetch(
-    "http://127.0.0.1:8000/expenses/spending-increase",
-    {
-      headers: {
-        Authorization: `Bearer ${session.access_token}`,
-      },
+    const session = await requireLogin();
+    const res = await fetch(`${API}/expenses/spending-increase`, {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+    });
+    if (!res.ok) return;
+    const data = await res.json();
+    const el = document.getElementById("spendingIncrease");
+    if (el) {
+        if (data.length === 0) { el.innerHTML = "No spending increase ✅"; }
+        else { el.innerHTML = data.map(d => `${d.category} ↑ ${d.percent}%`).join(" | "); }
     }
-  );
-
-  if (!res.ok) return;
-
-  const data = await res.json();
-  const el = document.getElementById("spendingIncrease");
-  if (!el) return;
-
-  if (data.length === 0) {
-    el.innerHTML = "No spending increase compared to last month ✅";
-    return;
-  }
-
-  el.innerHTML = data
-    .map(d => `${d.category} ↑ ${d.percent}% vs last month`)
-    .join("<br>");
 }
-/* ---------------------------
-   APPLY FILTERS / SORTING
----------------------------- */
+
 function applyFilters() {
-  const sortBy = document.getElementById("sortBy").value;
-  const order = document.getElementById("order").value;
-  const month = document.getElementById("month").value;
-  const keyword = document.getElementById("keyword").value.trim();
-
-  const params = {};
-
-  if (sortBy) params.sort_by = sortBy;
-  if (order) params.order = order;
-  if (month) params.month = month;
-  if (keyword) params.search = keyword;
-
-  loadExpenses(params);
+    const params = {
+        sort_by: document.getElementById("sortBy").value,
+        order: document.getElementById("order").value,
+        month: document.getElementById("month").value,
+        search: document.getElementById("keyword").value.trim()
+    };
+    loadExpenses(params);
 }
 
-/* ---------------------------
-   INIT
----------------------------- */
 document.addEventListener("DOMContentLoaded", async () => {
-  const fakeBtn = document.createElement("button");
-
-  await disableWhileLoading(fakeBtn, async () => {
-    await loadExpenses();
-    await loadSpendingIncreaseInsight();
-  });
+    if (typeof loadTopNav === "function") await loadTopNav("expenses");
+    await disableWhileLoading(null, async () => {
+        await loadExpenses();
+        await loadSpendingIncreaseInsight();
+    });
 });
-
