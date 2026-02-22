@@ -7,11 +7,10 @@ const sb = window.supabaseClient;
    DOM REFERENCES
 ===================== */
 let title,
-    loginBox, signupBox, changeBox,
-    loginEmail, loginPassword,
-    signupEmail, signupPassword,
-    changeEmail, currentPassword, newPassword,
-    loginHint, signupHint, changeHint;
+  loginBox, signupBox, changeBox,
+  loginEmail, loginPassword,
+  signupEmail, signupPassword,
+  changeEmail, newPassword, confirmNewPassword;
 
 /* =====================
    STATUS
@@ -32,45 +31,27 @@ function hideAll() {
 
 function showLogin() {
   hideAll();
-
   loginBox?.classList.remove("hidden");
   title && (title.innerText = "Login");
-
-  loginHint?.classList.remove("hidden");
-  signupHint?.classList.add("hidden");
-  changeHint?.classList.add("hidden");
-
   setStatus("");
 }
 
 function showSignup() {
   hideAll();
-
   signupBox?.classList.remove("hidden");
   title && (title.innerText = "Create Account");
-
-  loginHint?.classList.add("hidden");
-  signupHint?.classList.remove("hidden");
-  changeHint?.classList.add("hidden");
-
   setStatus("");
 }
 
 function showChange() {
   hideAll();
-
   changeBox?.classList.remove("hidden");
-  title && (title.innerText = "Change Password");
-
-  loginHint?.classList.add("hidden");
-  signupHint?.classList.add("hidden");
-  changeHint?.classList.remove("hidden");
-
+  title && (title.innerText = "Set New Password");
   setStatus("");
 }
 
 /* =====================
-   AUTH ACTIONS
+   LOGIN
 ===================== */
 async function login() {
   await disableWhileLoading(null, async () => {
@@ -79,11 +60,18 @@ async function login() {
       password: loginPassword.value
     });
 
-    if (error) return setStatus(error.message);
+    if (error) {
+      setStatus("Invalid email or password");
+      return;
+    }
+
     location.href = "home.html";
   });
 }
 
+/* =====================
+   SIGNUP
+===================== */
 async function signup() {
   await disableWhileLoading(null, async () => {
     const { error } = await sb.auth.signUp({
@@ -91,45 +79,86 @@ async function signup() {
       password: signupPassword.value
     });
 
-    if (error) return setStatus(error.message);
-    setStatus("Account created ✅");
-  });
-}
-
-async function changePassword() {
-  await disableWhileLoading(null, async () => {
-    const { error: loginError } = await sb.auth.signInWithPassword({
-      email: changeEmail.value,
-      password: currentPassword.value
-    });
-
-    if (loginError) {
-      alert("Current password incorrect");
+    if (error) {
+      setStatus("Email already registered ⚠️");
       return;
     }
 
-    const { error } = await sb.auth.updateUser({
-      password: newPassword.value
-    });
-
-    if (error) return alert(error.message);
-
-    alert("Password changed successfully ✅");
-
-    currentPassword.value = "";
-    newPassword.value = "";
+    setStatus("Account created ✅ Check your email");
   });
 }
 
+/* =====================
+   FORGOT PASSWORD
+===================== */
+async function forgotPassword() {
+
+  if (window.location.hash.includes("type=recovery")) {
+    showChange();
+    return;
+  }
+
+  const email = loginEmail?.value;
+
+  if (!email) {
+    alert("Enter your email first");
+    return;
+  }
+
+  const { error } = await sb.auth.resetPasswordForEmail(email, {
+    redirectTo: window.location.origin + "/html/login.html"
+  });
+
+  if (error) return alert(error.message);
+
+  alert("Password reset email sent 📩");
+}
+
+/* =====================
+   CHANGE PASSWORD
+===================== */
+async function changePassword() {
+
+  if (!newPassword.value || !confirmNewPassword.value) {
+    alert("Enter password");
+    return;
+  }
+
+  if (newPassword.value !== confirmNewPassword.value) {
+    alert("Passwords do not match");
+    return;
+  }
+
+  const { error } = await sb.auth.updateUser({
+    password: newPassword.value
+  });
+
+  if (error) return alert(error.message);
+
+  alert("Password updated successfully ✅");
+
+  newPassword.value = "";
+  confirmNewPassword.value = "";
+
+  /* remove recovery hash */
+  history.replaceState(null, null, window.location.pathname);
+
+  showLogin();
+}
+
+/* =====================
+   LOGOUT
+===================== */
 async function logout() {
   await sb.auth.signOut();
   location.href = "login.html";
 }
 
 /* =====================
-   INIT (DOM SAFE)
+   INIT
 ===================== */
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
+
   title = document.getElementById("title");
 
   loginBox = document.getElementById("loginBox");
@@ -143,12 +172,20 @@ document.addEventListener("DOMContentLoaded", () => {
   signupPassword = document.getElementById("signupPassword");
 
   changeEmail = document.getElementById("changeEmail");
-  currentPassword = document.getElementById("currentPassword");
   newPassword = document.getElementById("newPassword");
+  confirmNewPassword = document.getElementById("confirmNewPassword");
 
-  loginHint = document.getElementById("loginHint");
-  signupHint = document.getElementById("signupHint");
-  changeHint = document.getElementById("changeHint");
+  /* ⭐ Recovery redirect detection */
+  if (window.location.hash.includes("type=recovery")) {
+    showChange();
+    return;
+  }
 
-  showLogin(); // ✅ now safe
+  const { data } = await sb.auth.getSession();
+
+  if (data.session) {
+    showChange();
+  } else {
+    showLogin();
+  }
 });

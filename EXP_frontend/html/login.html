@@ -1,189 +1,84 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <link rel="stylesheet" href="/css/base.css">
-  <link rel="stylesheet" href="/css/responsive.css">
-  <title>Auth</title>
-
-  <style>
-    body {
-      min-height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      background: linear-gradient(135deg, #eef0f4, #dfe3ea);
-    }
-
-    /* Wrapper to position close button */
-    .auth-wrapper {
-      position: relative;
-    }
-
-    /* Frosted glass card */
-    .auth-card {
-      width: 340px;
-      padding: 26px;
-      border-radius: 14px;
-
-      background: rgba(255, 255, 255, 0.35);
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
-
-      border: 1px solid rgba(255,255,255,0.4);
-      box-shadow: 0 20px 40px rgba(0,0,0,0.08);
-
-      animation: fadeIn 0.35s ease;
-    }
-
-    .auth-card.closing {
-      animation: fadeOut 0.3s ease forwards;
-    }
-
-    /* Inputs */
-    .auth-card input {
-      background: rgba(255,255,255,0.75);
-      border: 1px solid rgba(0,0,0,0.08);
-    }
-
-    .auth-card input:focus {
-      background: rgba(255,255,255,0.9);
-    }
-
-    h2 {
-      text-align: center;
-      margin-bottom: 18px;
-    }
-
-    .hint {
-      text-align: center;
-      font-size: 14px;
-      margin-top: 14px;
-      color: var(--muted);
-    }
-
-    .hint a {
-      cursor: pointer;
-    }
-
-    /* === CLOSE BUTTON (TOP CENTER, FLOATING) === */
-    .close-btn {
-      position: absolute;
-      top: -42px;
-      left: 50%;
-      transform: translateX(-50%);
-
-      width: 36px;
-      height: 36px;
-      border-radius: 50%;
-
-      background: rgba(255,255,255,0.8);
-      backdrop-filter: blur(8px);
-
-      border: 1px solid rgba(0,0,0,0.12);
-      box-shadow: 0 10px 22px rgba(0,0,0,0.18);
-
-      font-size: 20px;
-      line-height: 34px;
-      text-align: center;
-      cursor: pointer;
-      user-select: none;
-
-      transition: transform 0.2s ease, background 0.2s ease;
-    }
-
-    .close-btn:hover {
-      background: rgba(255,255,255,0.95);
-      transform: translateX(-50%) scale(1.08);
-    }
-
-    /* Animations */
-    @keyframes fadeIn {
-      from {
-        opacity: 0;
-        transform: scale(0.96);
-      }
-      to {
-        opacity: 1;
-        transform: scale(1);
-      }
-    }
-
-    @keyframes fadeOut {
-      to {
-        opacity: 0;
-        transform: scale(0.95);
-      }
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/css/login.css">
+    <title>Auth</title>
 </head>
-
 <body>
 
 <div class="auth-wrapper">
-  <div class="close-btn" onclick="closeAuth()">✕</div>
+    <div class="close-btn" onclick="closeAuth()">✕</div>
 
-  <div class="card auth-card">
+    <div class="auth-card">
+        <h2 id="title">Login</h2>
 
-    <h2 id="title">Login</h2>
+        <div id="loginBox">
+            <span class="input-label">Username</span>
+            <input id="loginEmail" type="email" placeholder="example@test.com">
+            
+            <span class="input-label">Password</span>
+            <input id="loginPassword" type="password" placeholder=".......">
+            
+            <button onclick="login()">Sign In</button>
 
-    <!-- ================= LOGIN ================= -->
-    <div id="loginBox">
-      <input id="loginEmail" type="email" placeholder="Email">
-      <input id="loginPassword" type="password" placeholder="Password">
-      <button onclick="login()">Login</button>
+            <div class="hint">
+                Forget Password ? <a onclick="forgotPassword()">Click Here!</a>
+                <a class="signup-link" onclick="showSignup()">Register / Sign Up</a>
+            </div>
+        </div>
 
-      <div class="hint">
-        No account?
-        <a onclick="showSignup()">Create account</a>
-        <br>
-        <a onclick="showChange()">Forgot / Change password?</a>
-      </div>
+        <div id="signupBox" class="hidden">
+            <span class="input-label">Email</span>
+            <input id="signupEmail" type="email" placeholder="Email">
+            
+            <span class="input-label">Password</span>
+            <input id="signupPassword" type="password" placeholder="Password">
+            
+            <span class="input-label">Confirm Password</span>
+            <input id="signupConfirmPassword" type="password" placeholder="Repeat Password">
+            
+            <button onclick="signup()">Create Account</button>
+
+            <div class="hint">
+                Already have an account?
+                <a class="signup-link" onclick="showLogin()">Log in</a>
+            </div>
+        </div>
+
+        <div id="changeBox" class="hidden">
+            <span class="input-label">Email</span>
+            <input id="changeEmail" type="email" placeholder="Email">
+            
+            <span class="input-label">New Password</span>
+            <input id="newPassword" type="password" placeholder="New password">
+            
+            <span class="input-label">Confirm New Password</span>
+            <input id="confirmNewPassword" type="password" placeholder="Repeat new password">
+            
+            <button onclick="changePassword()">Change Password</button>
+
+            <div class="hint">
+                <a class="signup-link" onclick="showLogin()">← Back to login</a>
+            </div>
+        </div>
+
+        <div id="status" class="status"></div>
     </div>
-
-    <!-- ================= SIGNUP ================= -->
-    <div id="signupBox" class="hidden">
-      <input id="signupEmail" type="email" placeholder="Email">
-      <input id="signupPassword" type="password" placeholder="Password">
-      <button onclick="signup()">Create Account</button>
-
-      <div class="hint">
-        Already have an account?
-        <a onclick="showLogin()">Log in</a>
-      </div>
-    </div>
-
-    <!-- ============== CHANGE PASSWORD ============== -->
-    <div id="changeBox" class="hidden">
-      <input id="changeEmail" type="email" placeholder="Email">
-      <input id="currentPassword" type="password" placeholder="Current password">
-      <input id="newPassword" type="password" placeholder="New password">
-      <button onclick="changePassword()">Change Password</button>
-
-      <div class="hint">
-        <a onclick="showLogin()">← Back to login</a>
-      </div>
-    </div>
-
-    <div id="status" class="status"></div>
-  </div>
 </div>
 
-<!-- ================= SCRIPTS ================= -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="/js/supabaseClient.js"></script>
 <script src="/js/auth.js"></script>
-
 <script>
-  function closeAuth() {
-    const card = document.querySelector('.auth-card');
-    card.classList.add('closing');
-
-    setTimeout(() => {
-      window.location.href = "/html/home.html";
-    }, 280);
-  }
+    function closeAuth() {
+        const card = document.querySelector('.auth-card');
+        card.classList.add('closing');
+        setTimeout(() => { 
+            window.location.href = "/html/home.html"; 
+        }, 280);
+    }
 </script>
 
 </body>

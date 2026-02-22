@@ -3,63 +3,101 @@
 <head>
     <meta charset="UTF-8">
     <title>Home</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
     <link rel="stylesheet" href="/css/topnav.css">
     <link rel="stylesheet" href="/css/base.css">
     <link rel="stylesheet" href="/css/autocomplete.css">
     <link rel="stylesheet" href="/css/responsive.css">
     <link rel="stylesheet" href="/css/profiledropdown.css">
+    <link rel="stylesheet" href="/css/home.css">
+
     <style>
-        @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
+    @keyframes spin{
+        from{transform:rotate(0deg);}
+        to{transform:rotate(360deg);}
+    }
     </style>
     <script src="/js/topnav.js"></script>
 </head>
 <body>
-
 <div id="topnavContainer"></div>
 
-<div class="content-wrapper">
-    <h3 class="section-title">Add Expense</h3>
-    <div class="form-card">
-        <input id="expDate" type="date">
-        <div class="autocomplete-wrapper">
-            <input id="expCategory" placeholder="Category">
-            <div id="expCategoryList" class="autocomplete-list"></div>
+<div class="split-layout">
+    <div class="brand-panel">
+        <div class="brand-content">
+            <h1 class="designer-title">⌘ FINOVA</h1>
+            <h2 class="brand-main">Personal Finance Intelligence</h2>
+            <p class="subtitle">
+                FINOVA is a web-based platform designed to help you analyse, track, and manage
+                your personal finances with clarity. Monitor daily expenses, record income,
+                understand spending behaviour, and build smarter financial habits — all in one place.
+            </p>
+            <p class="quote">
+                “Do not save what is left after spending, but spend what is left after saving.”
+                <span class="quote-author">— Warren Buffett</span>
+            </p>
         </div>
-        <input id="expAmount" type="number" placeholder="Amount">
-        <input id="expComment" placeholder="Comment">
-        <button class="main-btn" onclick="addExpense(this)">Add Expense</button>
     </div>
 
-    <div class="divider"></div>
-
-    <h3 class="section-title">Add Income</h3>
-    <div class="form-card">
-        <input id="incDate" type="date">
-        <div class="autocomplete-wrapper">
-            <input id="incSource" placeholder="Source">
-            <div id="incSourceList" class="autocomplete-list"></div>
+    <div class="forms-panel">
+        <div class="mobile-tabs">
+            <button onclick="showForm('expense')" class="active" id="tab-exp">Expense</button>
+            <button onclick="showForm('income')" id="tab-inc">Income</button>
         </div>
-        <input id="incAmount" type="number" placeholder="Amount">
-        <input id="incComment" placeholder="Comment">
-        <button class="main-btn" onclick="addIncome(this)">Add Income</button>
-    </div>
 
-    <div class="footer-links">
-        <a href="expenses.html">Expenses</a> |
-        <a href="income.html">Income</a> |
-        <a href="analytics.html">Analytics</a>
+        <div class="premium-card form-box" id="expenseBox">
+            <div class="card-title">Add Expense</div>
+            <input id="expDate" type="date">
+            <div class="autocomplete-wrapper">
+                <input id="expCategory" placeholder="Category">
+                <div id="expCategoryList" class="autocomplete-list"></div>
+            </div>
+            <input id="expAmount" type="number" placeholder="Amount">
+            <input id="expComment" placeholder="Comment">
+            <button class="main-btn" onclick="addExpense(this)">Add Expense</button>
+        </div>
+
+        <div class="premium-card form-box" id="incomeBox">
+            <div class="card-title">Add Income</div>
+            <input id="incDate" type="date">
+            <div class="autocomplete-wrapper">
+                <input id="incSource" placeholder="Source">
+                <div id="incSourceList" class="autocomplete-list"></div>
+            </div>
+            <input id="incAmount" type="number" placeholder="Amount">
+            <input id="incComment" placeholder="Comment">
+            <button class="main-btn" onclick="addIncome(this)">Add Income</button>
+        </div>
     </div>
 </div>
 
-<div id="sidebarContainer"></div>
-
-<div id="globalLoader" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.2); z-index:9999; align-items:center; justify-content:center;">
-    <div style="width:40px; height:40px; border:4px solid #ddd; border-top:4px solid var(--accent); border-radius:50%; animation: spin 1s linear infinite;"></div>
+<div id="globalLoader" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.25); z-index:9999; align-items:center; justify-content:center;">
+    <div style="width:40px; height:40px; border:4px solid #ddd; border-top:4px solid #6b7280; border-radius:50%; animation:spin 1s linear infinite;"></div>
 </div>
+
+<script>
+function showForm(type){
+    const exp=document.getElementById("expenseBox");
+    const inc=document.getElementById("incomeBox");
+    const t1=document.getElementById("tab-exp");
+    const t2=document.getElementById("tab-inc");
+
+    if(window.innerWidth > 900) return;
+
+    if(type==="expense"){
+        exp.style.display="flex";
+        inc.style.display="none";
+        t1.classList.add("active");
+        t2.classList.remove("active");
+    }else{
+        inc.style.display="flex";
+        exp.style.display="none";
+        t2.classList.add("active");
+        t1.classList.remove("active");
+    }
+}
+</script>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="/js/supabaseClient.js"></script>

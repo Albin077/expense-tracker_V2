@@ -1,0 +1,191 @@
+/* ---------- GLOBAL SAFE ---------- */
+html,body{
+    margin:0;
+    padding:0;
+    overflow-x:hidden;
+    font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu;
+}
+
+/* ---------- LAYOUT ---------- */
+.split-layout{
+    display:flex;
+    width:100%;
+    min-height:100svh;
+}
+
+/* ---------- LEFT PANEL ---------- */
+.brand-panel{
+    width:45%;
+    position:relative;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:48px;
+    overflow:hidden;
+    background:linear-gradient(180deg, #565d68 0%, #7b828d 45%, #c4c9d1 100%);
+    color:white;
+    box-sizing: border-box;
+}
+
+.brand-content{
+    position:relative;
+    z-index:2;
+    max-width:460px;
+    text-align:left;
+}
+
+.designer-title{
+    font-size:30px;
+    letter-spacing:4px;
+    font-weight:700;
+    margin:0 0 6px 0;
+    opacity:.95;
+}
+
+.brand-main{
+    font-size:22px;
+    font-weight:500;
+    margin-bottom:14px;
+}
+
+.subtitle{
+    opacity:.9;
+    line-height:1.7;
+    font-size:14px;
+    margin-top:6px;
+}
+
+.quote{
+    margin-top:20px;
+    font-style:italic;
+    opacity:.85;
+    line-height:1.6;
+    font-size:13px;
+}
+
+.quote-author{
+    display:block;
+    margin-top:6px;
+    font-style:normal;
+    font-weight:500;
+    opacity:.9;
+}
+
+/* ---------- RIGHT PANEL ---------- */
+.forms-panel{
+    width:55%;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+    gap:28px;
+    padding:48px;
+    box-sizing: border-box;
+}
+
+/* ---------- CARD ---------- */
+.premium-card{
+    background:#fff;
+    border-radius:18px;
+    padding:26px;
+    border:1px solid #eee;
+    box-shadow:0 20px 45px rgba(0,0,0,0.07);
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+    width:100%;
+    max-width:420px;
+    box-sizing:border-box;
+}
+
+.card-title{
+    font-size:20px;
+    font-weight:600;
+}
+
+.premium-card input{
+    padding:12px;
+    border-radius:10px;
+    border:1px solid #e5e7eb;
+    background:#fafafa;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.main-btn{
+    padding:12px;
+    border-radius:12px;
+    border:none;
+    background:#6b7280;
+    color:white;
+    font-weight:600;
+    cursor:pointer;
+}
+
+.mobile-tabs{
+    display:none;
+}
+
+/* ---------- TABLET ---------- */
+@media (max-width:1200px){
+    .forms-panel{padding:36px;}
+    .brand-panel{padding:36px;}
+}
+
+/* ---------- MOBILE FIXED ---------- */
+@media(max-width:900px){
+    .split-layout{
+        flex-direction:column;
+        min-height: auto;
+    }
+
+    .brand-panel{
+        width:100%;
+        padding:40px 24px;
+        align-items: flex-start;
+        justify-content: flex-start;
+    }
+
+    .forms-panel{
+        width:100%;
+        padding:20px 16px 40px; /* Side padding reduced for small screens */
+        gap:18px;
+        justify-content: flex-start;
+    }
+
+    .mobile-tabs{
+        display:flex;
+        background:#eef1f5;
+        border-radius:10px;
+        overflow:hidden;
+        width:100%;
+        max-width:420px;
+        margin-bottom: 5px;
+    }
+
+    .mobile-tabs button{
+        flex:1;
+        padding:14px;
+        border:none;
+        background:transparent;
+        font-weight:600;
+        font-size: 15px;
+    }
+
+    .mobile-tabs .active{
+        background:#6b7280;
+        color:white;
+    }
+
+    .premium-card{
+        padding:24px 20px;
+        max-width:100%; /* Allows card to be responsive */
+    }
+
+    #incomeBox{
+        display:none; /* Hidden by default on mobile */
+    }
+
+    .designer-title{font-size:26px;}
+    .brand-main{font-size:20px;}
+}
