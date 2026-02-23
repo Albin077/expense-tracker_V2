@@ -10,7 +10,6 @@ router = APIRouter()
 # ------------------------------
 @router.post("/expenses")
 def add_expense(data: dict, user=Depends(get_current_user), db=Depends(get_db)):
-    # ✅ BACKEND VALIDATION
     required = ["expense_date", "category", "amount"]
     for field in required:
         if not data.get(field):
@@ -19,14 +18,15 @@ def add_expense(data: dict, user=Depends(get_current_user), db=Depends(get_db)):
     cur = db.cursor()
     cur.execute(
         """
-        INSERT INTO expenses (expense_date, category, amount, comment, user_id)
-        VALUES (%s, %s, %s, %s, %s)
+        INSERT INTO expenses (expense_date, category, amount, comment, account, user_id)
+        VALUES (%s, %s, %s, %s, %s, %s)
         """,
         (
             data["expense_date"],
             data["category"],
             data["amount"],
             data.get("comment"),
+            data.get("account"),
             user["sub"],
         ),
     )
@@ -44,7 +44,7 @@ def get_expenses(
     month: int | None = None,
     category: str | None = None,
     keyword: str | None = None,
-    search: str | None = None,   # ✅ ADD THIS (non-breaking)
+    search: str | None = None,
     user=Depends(get_current_user),
     db=Depends(get_db),
 ):
@@ -59,15 +59,13 @@ def get_expenses(
     order_sql = "ASC" if order.lower() == "asc" else "DESC"
 
     query = """
-        SELECT id, expense_date, category, amount, comment
+        SELECT id, expense_date, category, amount, comment, account
         FROM expenses
         WHERE user_id = %s
     """
     params = [user["sub"]]
 
-    # ------------------------------
     # FILTERS
-    # ------------------------------
     if month:
         query += " AND EXTRACT(MONTH FROM expense_date) = %s"
         params.append(month)
@@ -76,23 +74,25 @@ def get_expenses(
         query += " AND category = %s"
         params.append(category)
 
-    # ✅ SUPPORT BOTH keyword & search
+    # ⭐ SEARCH (account added)
     term = keyword or search
     if term:
         query += """
             AND (
                 category ILIKE %s
                 OR comment ILIKE %s
+                OR account ILIKE %s
                 OR amount::TEXT ILIKE %s
             )
         """
         kw = f"%{term}%"
-        params.extend([kw, kw, kw])
+        params.extend([kw, kw, kw, kw])
 
     query += f" ORDER BY {sort_column} {order_sql}"
 
     cur.execute(query, params)
     return cur.fetchall()
+
 
 # ------------------------------
 # UPDATE EXPENSE
@@ -111,7 +111,8 @@ def update_expense(
         SET expense_date = %s,
             category = %s,
             amount = %s,
-            comment = %s
+            comment = %s,
+            account = %s
         WHERE id = %s AND user_id = %s
         """,
         (
@@ -119,6 +120,7 @@ def update_expense(
             data["category"],
             data["amount"],
             data.get("comment"),
+            data.get("account"),
             expense_id,
             user["sub"],
         ),
@@ -145,9 +147,9 @@ def delete_expense(
     return {"status": "expense deleted"}
 
 
-# =========================================================
-# 📊 SPENDING INCREASE INSIGHT (NEW)
-# =========================================================
+# ------------------------------
+# SPENDING INCREASE INSIGHT
+# ------------------------------
 @router.get("/expenses/spending-increase")
 def spending_increase(user=Depends(get_current_user), db=Depends(get_db)):
     cur = db.cursor()

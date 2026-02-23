@@ -24,7 +24,7 @@ html,body{
     overflow:hidden;
     background:linear-gradient(180deg, #565d68 0%, #7b828d 45%, #c4c9d1 100%);
     color:white;
-    box-sizing: border-box;
+    box-sizing:border-box;
 }
 
 .brand-content{
@@ -80,7 +80,7 @@ html,body{
     align-items:center;
     gap:28px;
     padding:48px;
-    box-sizing: border-box;
+    box-sizing:border-box;
 }
 
 /* ---------- CARD ---------- */
@@ -103,15 +103,25 @@ html,body{
     font-weight:600;
 }
 
+/* ---------- INPUT ---------- */
 .premium-card input{
     padding:12px;
     border-radius:10px;
     border:1px solid #e5e7eb;
     background:#fafafa;
-    width: 100%;
-    box-sizing: border-box;
+    width:100%;
+    box-sizing:border-box;
+    transition:all .18s ease;
 }
 
+.premium-card input:focus{
+    outline:none;
+    border-color:#6b7280;
+    background:#fff;
+    box-shadow:0 0 0 2px rgba(107,114,128,0.15);
+}
+
+/* ---------- BUTTON ---------- */
 .main-btn{
     padding:12px;
     border-radius:12px;
@@ -120,8 +130,19 @@ html,body{
     color:white;
     font-weight:600;
     cursor:pointer;
+    transition:.18s;
 }
 
+.main-btn:hover{
+    background:#575d69;
+    transform:translateY(-1px);
+}
+
+.main-btn:active{
+    transform:translateY(0);
+}
+
+/* ---------- MOBILE TABS ---------- */
 .mobile-tabs{
     display:none;
 }
@@ -132,25 +153,26 @@ html,body{
     .brand-panel{padding:36px;}
 }
 
-/* ---------- MOBILE FIXED ---------- */
+/* ---------- MOBILE ---------- */
 @media(max-width:900px){
+
     .split-layout{
         flex-direction:column;
-        min-height: auto;
+        min-height:auto;
     }
 
     .brand-panel{
         width:100%;
         padding:40px 24px;
-        align-items: flex-start;
-        justify-content: flex-start;
+        align-items:flex-start;
+        justify-content:flex-start;
     }
 
     .forms-panel{
         width:100%;
-        padding:20px 16px 40px; /* Side padding reduced for small screens */
+        padding:20px 16px 40px;
         gap:18px;
-        justify-content: flex-start;
+        justify-content:flex-start;
     }
 
     .mobile-tabs{
@@ -160,7 +182,7 @@ html,body{
         overflow:hidden;
         width:100%;
         max-width:420px;
-        margin-bottom: 5px;
+        margin-bottom:5px;
     }
 
     .mobile-tabs button{
@@ -169,7 +191,7 @@ html,body{
         border:none;
         background:transparent;
         font-weight:600;
-        font-size: 15px;
+        font-size:15px;
     }
 
     .mobile-tabs .active{
@@ -179,11 +201,11 @@ html,body{
 
     .premium-card{
         padding:24px 20px;
-        max-width:100%; /* Allows card to be responsive */
+        max-width:100%;
     }
 
     #incomeBox{
-        display:none; /* Hidden by default on mobile */
+        display:none;
     }
 
     .designer-title{font-size:26px;}

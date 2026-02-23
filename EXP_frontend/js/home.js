@@ -3,6 +3,7 @@ const API = "http://127.0.0.1:8000";
 
 let expenseCategories = [];
 let incomeSources = [];
+let expenseAccounts = [];   // ✅ NEW
 
 /* ---------------- LOADER ---------------- */
 function showLoader() {
@@ -54,69 +55,100 @@ function setupAutocomplete(inputId, listId, values) {
         const q = input.value.toLowerCase();
         list.innerHTML = "";
         if (!q) return;
-        values.filter(v => v.toLowerCase().startsWith(q)).forEach(v => {
-            const item = document.createElement("div");
-            item.className = "autocomplete-item";
-            item.textContent = v;
-            item.onclick = () => {
-                input.value = v;
-                list.innerHTML = "";
-            };
-            list.appendChild(item);
-        });
+
+        values
+            .filter(v => v && v.toLowerCase().startsWith(q))
+            .forEach(v => {
+                const item = document.createElement("div");
+                item.className = "autocomplete-item";
+                item.textContent = v;
+                item.onclick = () => {
+                    input.value = v;
+                    list.innerHTML = "";
+                };
+                list.appendChild(item);
+            });
     });
 }
 
+/* ---------------- LOAD AUTOCOMPLETE ---------------- */
 async function loadAutocompleteData() {
     const session = await getSession();
     if (!session) return;
+
     const headers = { Authorization: `Bearer ${session.access_token}` };
+
     try {
         const exp = await fetch(`${API}/expenses`, { headers });
         const expRows = await exp.json();
+
         expenseCategories = [...new Set(expRows.map(r => r[2]).filter(Boolean))];
+
+        // ✅ account from column index 5
+        expenseAccounts = [...new Set(expRows.map(r => r[5]).filter(Boolean))];
 
         const inc = await fetch(`${API}/income`, { headers });
         const incRows = await inc.json();
         incomeSources = [...new Set(incRows.map(r => r[2]).filter(Boolean))];
-    } catch (e) { console.error("Data load failed", e); }
+
+    } catch (e) {
+        console.error("Data load failed", e);
+    }
 }
 
-/* ---------------- ADD ACTIONS ---------------- */
+/* ---------------- ADD EXPENSE ---------------- */
 async function addExpense(btn) {
     return disableWhileLoading(btn, async () => {
         const session = await requireLoginSoft();
         if (!session) return;
-        if (!expDate.value || !expCategory.value || !expAmount.value) {
-            alert("Please fill all mandatory fields");
+
+        const date = expDate.value;
+        const category = expCategory.value;
+        const amount = expAmount.value;
+        const comment = expComment.value;
+        const account = expAccount.value;
+
+        if (!date || !category || !amount) {
+            alert("Please fill mandatory fields");
             return;
         }
-        await fetch(`${API}/expenses`, {
+
+        const res = await fetch(`${API}/expenses`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
                 Authorization: `Bearer ${session.access_token}`,
             },
             body: JSON.stringify({
-                expense_date: expDate.value,
-                category: expCategory.value,
-                amount: expAmount.value,
-                comment: expComment.value,
+                expense_date: date,
+                category,
+                amount,
+                comment,
+                account
             }),
         });
+
+        if (!res.ok) {
+            alert("Failed to add expense");
+            return;
+        }
+
         location.reload();
     });
 }
 
+/* ---------------- ADD INCOME ---------------- */
 async function addIncome(btn) {
     return disableWhileLoading(btn, async () => {
         const session = await requireLoginSoft();
         if (!session) return;
+
         if (!incDate.value || !incSource.value || !incAmount.value) {
             alert("Please fill all mandatory fields");
             return;
         }
-        await fetch(`${API}/income`, {
+
+        const res = await fetch(`${API}/income`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -129,6 +161,12 @@ async function addIncome(btn) {
                 comment: incComment.value,
             }),
         });
+
+        if (!res.ok) {
+            alert("Failed to add income");
+            return;
+        }
+
         location.reload();
     });
 }
@@ -136,9 +174,15 @@ async function addIncome(btn) {
 /* ---------------- INIT ---------------- */
 document.addEventListener("DOMContentLoaded", async () => {
     showLoader();
-    if (typeof loadTopNav === "function") await loadTopNav("home");
+
+    if (typeof loadTopNav === "function")
+        await loadTopNav("home");
+
     await loadAutocompleteData();
+
     setupAutocomplete("expCategory", "expCategoryList", expenseCategories);
+    setupAutocomplete("expAccount", "expAccountList", expenseAccounts); // ✅ NEW
     setupAutocomplete("incSource", "incSourceList", incomeSources);
+
     hideLoader();
 });
