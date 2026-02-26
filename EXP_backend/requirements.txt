@@ -1,5 +1,12 @@
 fastapi
 uvicorn
 python-dotenv
-python-jose
-requests
+supabase
+postgrest
+gotrue
+httpx
+pydantic
+psycopg2-binary
+pandas
+numpy
+fastapi-cache2
