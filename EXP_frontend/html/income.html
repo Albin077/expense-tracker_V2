@@ -1,88 +1,103 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta charset="UTF-8">
-  <title>Income</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Income</title>
 
-  <link rel="stylesheet" href="/css/base.css">
-  <link rel="stylesheet" href="/css/topnav.css">
-  <link rel="stylesheet" href="/css/autocomplete.css">
-  <link rel="stylesheet" href="/css/responsive.css">
-  <link rel="stylesheet" href="/css/profiledropdown.css">
-  <link rel="stylesheet" href="/css/loader.css"> 
-
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  
-  <script src="/js/supabaseClient.js"></script>
-  <script src="/js/topnav.js"></script>
-  <script src="/js/income.js" defer></script>
+    <link rel="stylesheet" href="/css/base.css">
+    <link rel="stylesheet" href="/css/topnav.css">
+    <link rel="stylesheet" href="/css/profiledropdown.css">
+    <link rel="stylesheet" href="/css/loader.css"> 
+    <link rel="stylesheet" href="/css/darkMode.css">
+    
+    <script src="/js/darkMode.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="/js/supabaseClient.js"></script>
+    <script src="/js/topnav.js"></script>
+    <script src="/js/income.js" defer></script>
 </head>
 <body>
-  <div id="topnavContainer"></div>
 
-  <div class="table-container">
+<div id="topnavContainer"></div>
+
+<div class="table-container">
     <header class="page-header">
-      <h2 class="section-title" style="margin:0;">💰 Income</h2>
+        <h2 class="section-title">💰 Income</h2>
+        <div id="incomeTotal" class="insight-badge">Loading...</div>
     </header>
 
     <div class="filter-bar">
-      <div class="filter-group">
-        <input 
-          type="text" 
-          id="incomeSearch" 
-          placeholder="Search source..." 
-          oninput="loadIncome()"
-          style="width: 200px;"
-        />
-        <select onchange="setMonth(this.value)">
-          <option value="">All Months</option>
-          <option value="1">Jan</option><option value="2">Feb</option>
-          <option value="3">Mar</option><option value="4">Apr</option>
-          <option value="5">May</option><option value="6">Jun</option>
-          <option value="7">Jul</option><option value="8">Aug</option>
-          <option value="9">Sep</option><option value="10">Oct</option>
-          <option value="11">Nov</option><option value="12">Dec</option>
-        </select>
-      </div>
-
-      <div class="filter-group">
-        <button class="apply-btn" onclick="toggleSortPanel()">Sort ⚙</button>
-        <div id="sortPanel" style="display:none; display: flex; gap: 5px;">
-          <button class="pill-btn" onclick="setSort('date')">Date</button>
-          <button class="pill-btn" onclick="setSort('amount')">Amt</button>
-          <button class="pill-btn" onclick="toggleOrder()">⇅</button>
+        <div class="filter-group">
+            <input 
+                type="text" 
+                id="incomeSearch" 
+                placeholder="Search source..." 
+                oninput="loadIncome()"
+            />
+            <select onchange="setMonth(this.value)">
+                <option value="">All Months</option>
+                <option value="1">Jan</option><option value="2">Feb</option>
+                <option value="3">Mar</option><option value="4">Apr</option>
+                <option value="5">May</option><option value="6">Jun</option>
+                <option value="7">Jul</option><option value="8">Aug</option>
+                <option value="9">Sep</option><option value="10">Oct</option>
+                <option value="11">Nov</option><option value="12">Dec</option>
+            </select>
         </div>
-      </div>
+
+        <div class="filter-group">
+            <button class="apply-btn" onclick="toggleSortPanel()">Sort ⚙</button>
+            <div id="sortPanel" style="display: none; gap: 8px;">
+                <button class="pill-btn" onclick="setSort('date')">Date</button>
+                <button class="pill-btn" onclick="setSort('amount')">Amt</button>
+                <button class="pill-btn" onclick="toggleOrder()">⇅</button>
+            </div>
+        </div>
     </div>
 
     <div class="table-wrapper">
-      <table>
-        <thead>
-          <tr>
-            <th>Date</th>
-            <th>Source</th>
-            <th>Amount</th>
-            <th>Comment</th>
-            <th style="text-align: center;">Actions</th>
-          </tr>
-        </thead>
-        <tbody id="incomeBody"></tbody>
-      </table>
+        <table>
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Source</th>
+                    <th>Amount</th>
+                    <th>Comment</th>
+                    <th style="text-align:center;">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="incomeBody"></tbody>
+        </table>
     </div>
-  </div>
+</div>
 
-  <div id="sidebarContainer"></div>
-
-  <style>
+<style>
+    /* Specific tweaks for Income page to match Expenses style */
     .pill-btn {
-      background: #f1f5f9;
-      border: 1px solid var(--border-color);
-      padding: 5px 10px;
-      border-radius: 8px;
-      font-size: 12px;
-      cursor: pointer;
+        background: #f1f5f9;
+        border: 1px solid var(--border-color);
+        padding: 6px 12px;
+        border-radius: 8px;
+        font-size: 12px;
+        cursor: pointer;
+        transition: background 0.2s;
     }
-  </style>
+    
+    .pill-btn:hover { background: #e2e8f0; }
+
+    @media (max-width: 768px) {
+        #sortPanel {
+            width: 100%;
+            display: none; /* Controlled by JS toggle */
+            justify-content: space-between;
+        }
+        #sortPanel .pill-btn {
+            flex: 1;
+            text-align: center;
+        }
+    }
+</style>
+
 </body>
 </html>

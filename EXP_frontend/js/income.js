@@ -15,9 +15,7 @@ function showWarning(message) {
     if (toast) {
         toast.innerText = `⚠️ ${message}`;
         toast.style.display = 'block';
-        setTimeout(() => {
-            toast.style.display = 'none';
-        }, 3000);
+        setTimeout(() => { toast.style.display = 'none'; }, 3000);
     } else {
         alert(message);
     }
@@ -55,7 +53,8 @@ async function loadIncome() {
 
 function toggleSortPanel() {
     sortPanelVisible = !sortPanelVisible;
-    document.getElementById("sortPanel").style.display = sortPanelVisible ? "flex" : "none";
+    const panel = document.getElementById("sortPanel");
+    panel.style.display = sortPanelVisible ? "flex" : "none";
 }
 
 function setSort(field) { sortBy = field; loadIncome(); }
@@ -68,8 +67,10 @@ function setMonth(val) { monthFilter = val; loadIncome(); }
 function renderIncome() {
     const tbody = document.getElementById("incomeBody");
     tbody.innerHTML = "";
+    let total = 0;
 
     incomeRows.forEach((r) => {
+        total += Number(r[3] || 0);
         const tr = document.createElement("tr");
         tr.innerHTML = `
             <td><input type="date" id="date-${r[0]}" value="${r[1] ?? ""}"></td>
@@ -83,6 +84,9 @@ function renderIncome() {
         `;
         tbody.appendChild(tr);
     });
+
+    const badge = document.getElementById("incomeTotal");
+    if(badge) badge.innerText = `Total: $${total.toLocaleString()}`;
 
     const addRow = document.createElement("tr");
     addRow.style.background = "#fcfcfc";
@@ -112,7 +116,6 @@ async function addIncome() {
     }
 
     const button = event.target;
-    // Uses the global disableWhileLoading from supabaseClient.js
     await disableWhileLoading(button, async () => {
         const session = await requireLogin();
         const res = await fetch(`${API}/income`, {
@@ -170,7 +173,6 @@ async function deleteIncome(id) {
 
 document.addEventListener("DOMContentLoaded", async () => {
     if (typeof loadTopNav === "function") await loadTopNav("income");
-    // Initial data load wrapped in the global loader
     await disableWhileLoading(null, async () => {
         await loadIncome();
     });

@@ -1,24 +1,42 @@
+/* ---------- FIXED TOP NAV ---------- */
+#topnavContainer {
+  position: fixed;       /* Keep navbar always visible */
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 1000;         /* Stay above all other content */
+  background: #fff;      /* Preserve your original background */
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08); /* subtle shadow for separation */
+}
+
+/* ---------- ADJUST BODY ---------- */
+/* Prevent content from going under fixed navbar */
+body {
+  padding-top: 70px;     /* Adjust this to match your navbar height */
+}
+
+/* ---------- NAVBAR CONTENT ---------- */
 .topnav {
   display: flex;
   flex-direction: column;
   gap: 10px;
   padding: 12px 16px 6px;
+  background: #fff;
+  border-bottom: 1px solid rgba(0,0,0,0.08);
 }
 
-/* ROW 1 */
+/* Top row: logo + profile */
 .topnav-row-1 {
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
-/* HOME ICON */
 .home-icon {
   font-size: 22px;
   text-decoration: none;
 }
 
-/* PROFILE BUTTON */
 .profile-btn {
   background: none;
   border: none;
@@ -33,28 +51,23 @@
   object-fit: cover;
 }
 
-/* ROW 2 NAV */
+/* Navigation links row */
 .topnav-row-2 {
   display: flex;
   justify-content: center;
   gap: 28px;
 }
 
-/* LINKS */
 .nav-link {
   text-decoration: none;
   font-size: 14px;
   font-weight: 500;
-  color: var(--muted);
+  color: #6b7280; /* Standard muted color */
   position: relative;
 }
 
-.nav-link:hover {
-  color: var(--text);
-}
-
 .nav-link.active {
-  color: var(--text);
+  color: #000;
 }
 
 .nav-link.active::after {
@@ -64,11 +77,11 @@
   bottom: -6px;
   width: 100%;
   height: 2px;
-  background: var(--text);
+  background: #000;
   border-radius: 2px;
 }
 
-/* MOBILE */
+/* Mobile adjustments */
 @media (max-width: 600px) {
   .topnav-row-2 {
     gap: 16px;

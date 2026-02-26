@@ -1,0 +1,104 @@
+/* ---------- darkMode.css ---------- */
+
+/* Global dark mode overrides */
+body.dark-mode {
+  background-color: #0f1117; /* Dark gradient base */
+  color: #f1f5f9;           /* All text light */
+}
+
+/* ---------- Cards ---------- */
+body.dark-mode .premium-card,
+body.dark-mode .profile-card {
+  background: linear-gradient(145deg, #1f2937, #111827); /* Dark gradient */
+  color: #f1f5f9;
+  border: 1px solid #374151; /* darker borders */
+  box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+}
+
+/* ---------- Inputs ---------- */
+body.dark-mode input,
+body.dark-mode select,
+body.dark-mode textarea {
+  background-color: #1f2937;
+  color: #f8fafc;
+  border: 1px solid #4b5563;
+}
+
+body.dark-mode input::placeholder,
+body.dark-mode textarea::placeholder {
+  color: #9ca3af; /* lighter gray */
+}
+
+/* ---------- Buttons ---------- */
+body.dark-mode .main-btn,
+body.dark-mode .btn-save {
+  background-color: #4b5563;
+  color: #f1f5f9;
+}
+
+body.dark-mode .main-btn:hover,
+body.dark-mode .btn-save:hover {
+  background-color: #6b7280;
+  color: #fff;
+}
+
+body.dark-mode .btn-secondary {
+  background-color: #374151;
+  color: #e5e7eb;
+  border-color: #4b5563;
+}
+
+body.dark-mode .btn-secondary.btn-logout {
+  background-color: #b91c1c;
+  border-color: #f87171;
+  color: #fff;
+}
+
+/* ---------- Navbar ---------- */
+body.dark-mode #topnavContainer,
+body.dark-mode .topnav {
+  background: linear-gradient(90deg, #111827, #1f2937);
+  border-bottom-color: #374151;
+}
+
+body.dark-mode .nav-link {
+  color: #d1d5db; /* light gray */
+}
+
+body.dark-mode .nav-link.active {
+  color: #fff;
+}
+
+body.dark-mode .topnav-row-2 {
+  gap: 28px;
+}
+
+/* ---------- Text overrides for other headings ---------- */
+body.dark-mode h1, body.dark-mode h2, body.dark-mode h3, body.dark-mode h4, body.dark-mode h5, body.dark-mode h6 {
+  color: #f8fafc;
+}
+
+/* ---------- Special gray blocks or subtle highlights ---------- */
+body.dark-mode .subtitle,
+body.dark-mode .quote,
+body.dark-mode .quote-author {
+  color: #cbd5e1; /* soft gray for secondary text */
+}
+
+/* ---------- Scrollbar ---------- */
+body.dark-mode ::-webkit-scrollbar {
+  width: 8px;
+}
+
+body.dark-mode ::-webkit-scrollbar-track {
+  background: #1f2937;
+}
+
+body.dark-mode ::-webkit-scrollbar-thumb {
+  background: #4b5563;
+  border-radius: 4px;
+}
+
+body.dark-mode ::-webkit-scrollbar-thumb:hover {
+  background: #6b7280;
+}

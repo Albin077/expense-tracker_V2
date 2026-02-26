@@ -8,8 +8,9 @@
   <link rel="stylesheet" href="/css/base.css">
   <link rel="stylesheet" href="/css/topnav.css">
   <link rel="stylesheet" href="/css/profiledropdown.css">
-  <link rel="stylesheet" href="/css/responsive.css">
   <link rel="stylesheet" href="/css/loader.css"> 
+  <link rel="stylesheet" href="/css/darkMode.css">
+  <script src="/js/darkMode.js" defer></script>
 
   <style>
     :root {
@@ -17,35 +18,34 @@
     }
 
     body {
-      /* Added extra padding for mobile breathing room */
-      padding-top: 100px; 
+      padding-top: 80px; 
       background: #f8fafc;
       margin: 0;
       display: flex;
       flex-direction: column;
       align-items: center;
       min-height: 100vh;
+      box-sizing: border-box;
     }
 
-    /* FIX: Navbar spans full width and stays on TOP during scroll */
     #topnavContainer {
       width: 100%;
       position: fixed;
       top: 0;
       left: 0;
-      z-index: 9999; /* Higher than card and loader */
+      z-index: 9999;
     }
 
     .profile-card {
       width: 90%;
       max-width: 420px;
-      margin: 20px auto 60px auto; /* Margin bottom for mobile scroll space */
+      margin: 40px auto;
       padding: 30px;
       border-radius: 24px;
       background: #ffffff;
       box-shadow: 0 15px 35px rgba(0,0,0,.04);
       text-align: center;
-      box-sizing: border-box; /* Ensures internal alignment is perfect */
+      box-sizing: border-box;
     }
 
     .avatar-large {
@@ -55,24 +55,16 @@
       object-fit: cover;
       border: 4px solid #fff;
       box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-      margin-bottom: 20px;
-    }
-
-    h3 {
-      margin: 0;
-      font-size: 1.4rem;
-      color: #1e293b;
-      font-weight: 700;
+      margin-bottom: 15px;
     }
 
     #userEmail {
-      margin: 8px 0 25px 0;
+      margin: 5px 0 20px 0;
       font-size: 14px;
       color: #64748b;
-      word-break: break-all; /* Prevents long emails from breaking mobile layout */
+      word-break: break-all;
     }
 
-    /* Alignment Box: Locks inputs and buttons to the same width */
     .alignment-box {
       width: 100%;
       display: flex;
@@ -81,12 +73,24 @@
       text-align: left;
     }
 
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    /* Specific Row for Dark Mode to align toggle nicely */
+    .theme-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+    }
+
     .form-group label {
       font-size: 12px;
       font-weight: 600;
       color: #334155;
-      display: block;
-      margin-bottom: 6px;
     }
 
     input#displayName {
@@ -95,8 +99,7 @@
       border: 1px solid #e2e8f0;
       border-radius: 12px;
       font-size: 15px;
-      box-sizing: border-box; /* Fixes alignment overflow */
-      transition: border-color 0.2s;
+      box-sizing: border-box;
     }
 
     .btn-save {
@@ -114,7 +117,7 @@
     hr {
       border: 0;
       border-top: 1px solid #f1f5f9;
-      margin: 10px 0;
+      margin: 5px 0;
     }
 
     .secondary-actions {
@@ -133,7 +136,6 @@
       font-size: 14px;
       font-weight: 500;
       cursor: pointer;
-      box-sizing: border-box;
     }
 
     .btn-logout {
@@ -141,14 +143,39 @@
       border-color: #fee2e2;
     }
 
-    /* Mobile specific adjustments */
+    /* Switch Styles */
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 46px;
+      height: 24px;
+    }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: #ccc;
+      transition: 0.3s;
+      border-radius: 24px;
+    }
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 18px;
+      width: 18px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: 0.3s;
+      border-radius: 50%;
+    }
+    input:checked + .slider { background-color: #475569; }
+    input:checked + .slider:before { transform: translateX(22px); }
+
     @media (max-width: 480px) {
-      .profile-card {
-        padding: 20px;
-      }
-      body {
-        padding-top: 90px;
-      }
+      .profile-card { padding: 20px; }
+      body { padding-top: 70px; }
     }
   </style>
 </head>
@@ -167,6 +194,8 @@
         <input type="text" id="displayName" placeholder="Enter name">
       </div>
 
+      
+
       <button class="btn-save" onclick="saveProfile()">Save Changes</button>
       
       <hr>
@@ -175,10 +204,18 @@
         <button class="btn-secondary" onclick="goChangePassword()">Change Password</button>
         <button class="btn-secondary btn-logout" onclick="logout()">Logout</button>
       </div>
+
+      <div class="theme-row">
+        <label style="font-size: 12px; font-weight: 600; color: #334155;">Dark Mode</label>
+        <label class="switch">
+          <input type="checkbox" id="darkModeToggle">
+          <span class="slider"></span>
+        </label>
+      </div>
     </div>
   </div>
 
-  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="/js/supabaseClient.js"></script>
   <script src="/js/topnav.js"></script>
   <script src="/js/profile.js" defer></script>
