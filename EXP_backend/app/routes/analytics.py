@@ -610,3 +610,113 @@ def analytics_insights(
         "new_categories": new_categories,
         "avg_table": avg_table,
     }
+# =================================================
+# 💳 ACCOUNT ANALYTICS (ADDED — NO CHANGES ABOVE)
+# =================================================
+
+# Account distribution (Pie / Bar)
+@router.get("/chart/account-distribution")
+def chart_account_distribution(
+    month: int = Query(..., ge=1, le=12),
+    year: int = Query(...),
+    user=Depends(get_current_user),
+    db=Depends(get_db),
+):
+    cur = db.cursor()
+
+    start = date(year, month, 1)
+    end = date(year + 1, 1, 1) if month == 12 else date(year, month + 1, 1)
+
+    cur.execute(
+        """
+        SELECT COALESCE(account,'Unknown'), SUM(amount)
+        FROM expenses
+        WHERE user_id=%s
+          AND expense_date >= %s
+          AND expense_date < %s
+        GROUP BY 1
+        ORDER BY SUM(amount) DESC
+        """,
+        (user["sub"], start, end),
+    )
+
+    rows = cur.fetchall()
+
+    return {
+        "labels": [r[0] for r in rows],
+        "data": [r[1] for r in rows],
+    }
+
+
+# Account yearly trend (Line)
+@router.get("/chart/account-trend")
+def chart_account_trend(
+    year: int = Query(...),
+    user=Depends(get_current_user),
+    db=Depends(get_db),
+):
+    cur = db.cursor()
+
+    cur.execute(
+        """
+        SELECT account,
+               EXTRACT(MONTH FROM expense_date)::int,
+               SUM(amount)
+        FROM expenses
+        WHERE user_id=%s
+          AND expense_date >= %s
+          AND expense_date < %s
+        GROUP BY 1,2
+        ORDER BY 1,2
+        """,
+        (user["sub"], date(year, 1, 1), date(year + 1, 1, 1)),
+    )
+
+    data = {}
+
+    for acc, m, t in cur.fetchall():
+        acc = acc or "Unknown"
+        if acc not in data:
+            data[acc] = [0] * 12
+        data[acc][m - 1] = t
+
+    return {
+        "labels": ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"],
+        "datasets": [{"label": k, "data": v} for k, v in data.items()],
+    }
+
+
+# Account insight (Credit vs Cash etc)
+@router.get("/chart/account-insight")
+def account_insight(
+    month: int = Query(..., ge=1, le=12),
+    year: int = Query(...),
+    user=Depends(get_current_user),
+    db=Depends(get_db),
+):
+    cur = db.cursor()
+
+    start = date(year, month, 1)
+    end = date(year + 1, 1, 1) if month == 12 else date(year, month + 1, 1)
+
+    cur.execute(
+        """
+        SELECT account, SUM(amount)
+        FROM expenses
+        WHERE user_id=%s
+          AND expense_date >= %s
+          AND expense_date < %s
+        GROUP BY account
+        ORDER BY SUM(amount) DESC
+        """,
+        (user["sub"], start, end),
+    )
+
+    rows = cur.fetchall()
+
+    if len(rows) >= 2:
+        return {
+            "text": f"{rows[0][0]} ₹{rows[0][1]} vs {rows[1][0]} ₹{rows[1][1]}"
+        }
+
+    return {"text": "Not enough data"}

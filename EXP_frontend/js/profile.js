@@ -1,3 +1,4 @@
+/* /js/profile.js */
 const sb = window.supabaseClient;
 
 async function requireLogin() {
@@ -10,25 +11,48 @@ async function requireLogin() {
 }
 
 async function loadProfile() {
-  const session = await requireLogin();
-  if (!session) return;
-
-  const name = session.user.user_metadata?.name || "";
-  document.getElementById("displayName").value = name;
-}
-
-async function saveProfile() {
+  // Uses the global disableWhileLoading (Silver Dollar Coin)
   await disableWhileLoading(null, async () => {
     const session = await requireLogin();
     if (!session) return;
 
-    const name = document.getElementById("displayName").value.trim();
+    // Load full-width TopNav
+    if (typeof loadTopNav === "function") {
+      await loadTopNav("profile");
+    }
 
-    await sb.auth.updateUser({
-      data: { name }
+    const metadata = session.user.user_metadata;
+    document.getElementById("displayName").value = metadata?.name || "";
+    document.getElementById("userDisplayName").innerText = metadata?.name || "User";
+    document.getElementById("userEmail").innerText = session.user.email;
+
+    // Load signed avatar URL if path exists
+    if (metadata?.avatar_path) {
+      const { data } = await sb.storage
+        .from("avatars")
+        .createSignedUrl(metadata.avatar_path, 3600);
+      if (data?.signedUrl) {
+        document.getElementById("avatarImg").src = data.signedUrl;
+      }
+    }
+  });
+}
+
+async function saveProfile() {
+  const name = document.getElementById("displayName").value.trim();
+  if (!name) return alert("Please enter a name");
+
+  await disableWhileLoading(null, async () => {
+    const { error } = await sb.auth.updateUser({
+      data: { name: name }
     });
 
-    alert("Profile updated");
+    if (error) {
+      alert("Error: " + error.message);
+    } else {
+      document.getElementById("userDisplayName").innerText = name;
+      alert("Profile updated!");
+    }
   });
 }
 
@@ -39,14 +63,6 @@ function goChangePassword() {
 async function logout() {
   await sb.auth.signOut();
   location.href = "login.html";
-}
-
-function showLoading() {
-  document.getElementById("profileLoader").style.display = "block";
-}
-
-function hideLoading() {
-  document.getElementById("profileLoader").style.display = "none";
 }
 
 document.addEventListener("DOMContentLoaded", loadProfile);

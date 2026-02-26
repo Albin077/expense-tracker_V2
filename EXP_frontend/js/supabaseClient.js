@@ -41,3 +41,17 @@ function disableWhileLoading(button, task) {
     });
 }
 
+/* ============================
+   AUTO-INJECTOR
+   (Creates the HTML for the loader)
+============================ */
+document.addEventListener("DOMContentLoaded", () => {
+    // Only create it if it doesn't exist yet
+    if (!document.getElementById("globalLoader")) {
+        const loader = document.createElement("div");
+        loader.id = "globalLoader";
+        // This matches the .spinner class in your loader.css
+        loader.innerHTML = '<div class="spinner"></div>';
+        document.body.appendChild(loader);
+    }
+});

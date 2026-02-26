@@ -14,6 +14,9 @@ body {
     color: var(--text-main);
     margin: 0;
     font-family: 'Segoe UI', system-ui, sans-serif;
+    /* Added: Prevents the whole page from wobbling sideways on mobile */
+    overflow-x: hidden; 
+    width: 100%;
 }
 
 /* Container & Table Wrapper */
@@ -22,6 +25,9 @@ body {
     margin: 20px auto;
     padding: 0 15px;
     animation: fadeIn 0.6s ease-out;
+    /* Added: Ensures container stays within viewport */
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .table-wrapper {
@@ -32,12 +38,15 @@ body {
     width: 100%;
     overflow-x: auto; /* Enables swipe on mobile */
     -webkit-overflow-scrolling: touch;
+    /* Added: Ensures it stays a block element */
+    display: block;
 }
 
 table {
     width: 100%;
     border-collapse: collapse;
-    min-width: 650px; /* Prevents squashing on mobile */
+    /* Keeps the table readable; user swipes to see more columns */
+    min-width: 650px; 
 }
 
 th {
@@ -47,6 +56,7 @@ th {
     text-align: left;
     padding: 15px;
     border-bottom: 1px solid var(--border-color);
+    white-space: nowrap; /* Added: Stops headers from wrapping weirdly */
 }
 
 td {
@@ -62,6 +72,7 @@ td input {
     background: transparent;
     border-radius: 6px;
     transition: all 0.2s;
+    box-sizing: border-box; /* Added: Critical for smartphone alignment */
 }
 
 td input:hover, td input:focus {
@@ -81,32 +92,56 @@ td input:hover, td input:focus {
     border: 1px solid var(--border-color);
     margin-bottom: 20px;
     box-shadow: var(--shadow-soft);
+    box-sizing: border-box;
 }
 
-.filter-group { display: flex; gap: 8px; }
+.filter-group { 
+    display: flex; 
+    gap: 8px; 
+    align-items: center;
+}
 
+/* Smartphone Specific Fixes */
 @media (max-width: 768px) {
-    .filter-bar { flex-direction: column; }
-    .filter-group { flex-direction: column; width: 100%; }
-    .filter-group input, .filter-group select { width: 100% !important; }
+    .filter-bar { 
+        flex-direction: column; 
+        padding: 15px;
+    }
+    .filter-group { 
+        flex-direction: column; 
+        width: 100%; 
+        align-items: stretch;
+    }
+    /* Forces inputs to fill width on phone */
+    .filter-group input, 
+    .filter-group select,
+    .apply-btn { 
+        width: 100% !important; 
+        margin: 4px 0;
+    }
 }
 
 /* Buttons & Animations */
 .apply-btn {
     background: var(--accent);
     color: white;
-    padding: 8px 16px;
+    padding: 10px 16px;
     border: none;
     border-radius: 8px;
     cursor: pointer;
     font-weight: 600;
+    transition: opacity 0.2s;
+}
+
+.apply-btn:active {
+    opacity: 0.8;
 }
 
 .action-btn {
     background: none;
     border: none;
     cursor: pointer;
-    padding: 5px;
+    padding: 8px;
     border-radius: 6px;
 }
 

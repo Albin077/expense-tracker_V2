@@ -8,33 +8,18 @@ let monthFilter = "";
 let sortPanelVisible = false;
 
 /* ---------------------------
-    HELPERS
+    NOTIFICATIONS
 ---------------------------- */
-function showLoader() {
-    const l = document.getElementById("globalLoader");
-    if (l) l.style.display = "flex";
-}
-
-function hideLoader() {
-    const l = document.getElementById("globalLoader");
-    if (l) l.style.display = "none";
-}
-
-async function disableWhileLoading(btn, fn) {
-    const originalText = btn ? btn.innerText : "";
-    if (btn) {
-        btn.disabled = true;
-        btn.innerText = "...";
-    }
-    showLoader();
-    try {
-        await fn();
-    } finally {
-        if (btn) {
-            btn.disabled = false;
-            btn.innerText = originalText;
-        }
-        hideLoader();
+function showWarning(message) {
+    const toast = document.getElementById('toastNotification');
+    if (toast) {
+        toast.innerText = `⚠️ ${message}`;
+        toast.style.display = 'block';
+        setTimeout(() => {
+            toast.style.display = 'none';
+        }, 3000);
+    } else {
+        alert(message);
     }
 }
 
@@ -117,16 +102,26 @@ function renderIncome() {
     ADD / UPDATE / DELETE
 ---------------------------- */
 async function addIncome() {
+    const date = document.getElementById("new-inc-date").value;
+    const source = document.getElementById("new-inc-src").value;
+    const amount = document.getElementById("new-inc-amt").value;
+
+    if (!date || !source || !amount || Number(amount) <= 0) {
+        showWarning("Please fill Date, Source, and a valid Amount!");
+        return; 
+    }
+
     const button = event.target;
+    // Uses the global disableWhileLoading from supabaseClient.js
     await disableWhileLoading(button, async () => {
         const session = await requireLogin();
         const res = await fetch(`${API}/income`, {
             method: "POST",
             headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
             body: JSON.stringify({
-                income_date: document.getElementById("new-inc-date").value,
-                source: document.getElementById("new-inc-src").value,
-                amount: Number(document.getElementById("new-inc-amt").value),
+                income_date: date,
+                source: source,
+                amount: Number(amount),
                 comment: document.getElementById("new-inc-com").value,
             }),
         });
@@ -135,6 +130,15 @@ async function addIncome() {
 }
 
 async function updateIncome(id) {
+    const date = document.getElementById(`date-${id}`).value;
+    const source = document.getElementById(`src-${id}`).value;
+    const amount = document.getElementById(`amt-${id}`).value;
+
+    if (!date || !source || !amount || Number(amount) <= 0) {
+        showWarning("Date, Source, and Amount cannot be empty!");
+        return;
+    }
+
     const button = event.target;
     await disableWhileLoading(button, async () => {
         const session = await requireLogin();
@@ -142,9 +146,9 @@ async function updateIncome(id) {
             method: "PUT",
             headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
             body: JSON.stringify({
-                income_date: document.getElementById(`date-${id}`).value,
-                source: document.getElementById(`src-${id}`).value,
-                amount: Number(document.getElementById(`amt-${id}`).value),
+                income_date: date,
+                source: source,
+                amount: Number(amount),
                 comment: document.getElementById(`com-${id}`).value,
             }),
         });
@@ -166,5 +170,8 @@ async function deleteIncome(id) {
 
 document.addEventListener("DOMContentLoaded", async () => {
     if (typeof loadTopNav === "function") await loadTopNav("income");
-    await loadIncome();
+    // Initial data load wrapped in the global loader
+    await disableWhileLoading(null, async () => {
+        await loadIncome();
+    });
 });

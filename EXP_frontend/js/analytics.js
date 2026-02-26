@@ -214,6 +214,144 @@ async function loadKeywordRangeChart() {
 }
 
 /* =========================
+   CHART 4 — ACCOUNT ANALYTICS
+========================= */
+
+let accountDistributionChart = null;
+let accountTrendChart = null;
+
+async function loadAccountCharts(){
+
+    const type = document.getElementById("accType").value;
+
+    // Always destroy both first (prevents overlap)
+    safeDestroy(accountDistributionChart);
+    safeDestroy(accountTrendChart);
+
+    if(type === "bar"){
+        await loadAccountDistribution();
+
+        // Hide trend canvas
+        document.getElementById("accountTrendChart").parentElement.style.display = "none";
+        document.getElementById("accountDistributionChart").parentElement.style.display = "block";
+    }
+    else if(type === "trend"){
+        await loadAccountTrend();
+
+        // Hide distribution canvas
+        document.getElementById("accountDistributionChart").parentElement.style.display = "none";
+        document.getElementById("accountTrendChart").parentElement.style.display = "block";
+    }
+
+    await loadAccountInsight();
+}
+
+async function loadAccountDistribution() {
+    const headers = await getHeaders();
+    if (!headers) return;
+
+    const from = document.getElementById("accFrom").value;
+    if (!from) return;
+
+    const d = new Date(from);
+
+    const res = await fetch(
+        `${API}/analytics/chart/account-distribution?month=${d.getMonth()+1}&year=${d.getFullYear()}`,
+        { headers }
+    );
+
+    const data = await res.json();
+
+    safeDestroy(accountDistributionChart);
+
+    const type = document.getElementById("accType").value;
+
+    accountDistributionChart = new Chart(
+        document.getElementById("accountDistributionChart"),
+        {
+            type: type, // bar / line / pie etc
+            data: {
+                labels: data.labels || [],
+                datasets: [{
+                    label: "Account Spending",
+                    data: data.data || [],
+                    backgroundColor: [
+                        classyColors.primary,
+                        classyColors.secondary,
+                        classyColors.accent,
+                        classyColors.highlight,
+                        classyColors.muted
+                    ],
+                    borderColor: classyColors.primary,
+                    borderWidth: 2,
+                    tension: 0,
+                    fill: type === "line",
+                    borderRadius: type === "bar" ? 8 : 0,
+                    pointRadius: type === "line" ? 4 : 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: "bottom" }
+                },
+                scales: (type === "bar" || type === "line") ? {
+                    y: { beginAtZero: true, grid: { color: classyColors.grid } },
+                    x: { grid: { display: false } }
+                } : {}
+            }
+        }
+    );
+}
+async function loadAccountTrend() {
+    const headers = await getHeaders();
+    if (!headers) return;
+
+    const from = document.getElementById("accFrom").value;
+    if(!from) return;
+
+    const year = new Date(from).getFullYear();
+
+    const res = await fetch(`${API}/analytics/chart/account-trend?year=${year}`, { headers });
+    const data = await res.json();
+
+    safeDestroy(accountTrendChart);
+
+    accountTrendChart = new Chart(document.getElementById("accountTrendChart"), {
+        type:"line",
+        data:{
+            labels:data.labels,
+            datasets:data.datasets.map((d,i)=>({
+                label:d.label,
+                data:d.data,
+                tension:0,
+                borderColor:Object.values(classyColors)[i%5],
+                backgroundColor:Object.values(classyColors)[i%5]
+            }))
+        },
+        options:{ responsive:true, maintainAspectRatio:false, scales:{y:{beginAtZero:true}} }
+    });
+}
+
+async function loadAccountInsight(){
+    const headers = await getHeaders();
+    if (!headers) return;
+
+    const from = document.getElementById("accFrom").value;
+    if(!from) return;
+
+    const d = new Date(from);
+
+    const res = await fetch(`${API}/analytics/chart/account-insight?month=${d.getMonth()+1}&year=${d.getFullYear()}`, { headers });
+    const data = await res.json();
+
+    const el = document.getElementById("accountInsightText");
+    if(el) el.innerText = data.text;
+}
+
+
+/* =========================
    INSIGHTS & UTILS
 ========================= */
 
@@ -314,6 +452,9 @@ function setDefaultCategoryDates() {
     document.getElementById("catTo").value = toStr;
     document.getElementById("kwFrom").value = fromStr;
     document.getElementById("kwTo").value = toStr;
+
+    document.getElementById("accFrom").value = fromStr;
+    document.getElementById("accTo").value = toStr;
 }
 
 function showLoader() { document.getElementById("globalLoader").style.display = "flex"; }
@@ -324,22 +465,31 @@ function hideLoader() { document.getElementById("globalLoader").style.display = 
 ========================= */
 document.addEventListener("DOMContentLoaded", async () => {
     if (typeof loadTopNav === "function") await loadTopNav("analytics");
-    showLoader();
+    
+    // The global showLoader is now available from supabaseClient.js
+    if (window.showLoader) showLoader(); 
 
     try {
         fillYears();
         setDefaultCategoryDates();
         
+        // Hide the trend canvas by default
+        const trendParent = document.getElementById("accountTrendChart").parentElement;
+        if (trendParent) trendParent.style.display = "none";
+        
         // Parallel load for efficiency
         await Promise.all([
             loadChart(),
             loadCategoryChart(),
+            loadAccountCharts(),
             loadIncomeExpenseInsight(),
             loadSpendingIncreaseInsight(),
             loadAvgExpenseTable()
         ]);
+    } catch (err) {
+        console.error("Analytics Load Error:", err);
     } finally {
-        // Slight delay to ensure charts are fully rendered before hiding loader
-        setTimeout(hideLoader, 500);
+        // Keeping your nice 500ms delay to ensure Chart.js settles
+        if (window.hideLoader) setTimeout(hideLoader, 500);
     }
 });

@@ -1,0 +1,51 @@
+/* /css/loader.css */
+
+/* The full-screen overlay */
+#globalLoader {
+    display: none; 
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.7); 
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(2px);
+}
+
+/* The Simple 2D Coin (32px) */
+.spinner {
+    width: 32px;
+    height: 32px;
+    position: relative;
+    border-radius: 50%;
+    
+    /* Clean Silver Gradient - No Glow */
+    background: linear-gradient(135deg, #f8fafc 0%, #cbd5e1 50%, #94a3b8 100%);
+    border: 1px solid #64748b; 
+    
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    /* Smooth, Simple Flip */
+    animation: simple-flip 1.2s linear infinite;
+}
+
+/* The Dollar Symbol ($) */
+.spinner::before {
+    content: "$";
+    color: #334155;
+    font-weight: 800;
+    font-size: 16px;
+    font-family: sans-serif;
+}
+
+/* Simple Horizontal Flip */
+@keyframes simple-flip {
+    0% {
+        transform: rotateY(0deg);
+    }
+    100% {
+        transform: rotateY(360deg);
+    }
+}

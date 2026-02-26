@@ -2,238 +2,186 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Profile</title>
-  <link rel="stylesheet" href="/css/topnav.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Profile - Finova</title>
+  
   <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/topnav.css">
+  <link rel="stylesheet" href="/css/profiledropdown.css">
   <link rel="stylesheet" href="/css/responsive.css">
-  <a href="home.html">⬅ Back</a>
+  <link rel="stylesheet" href="/css/loader.css"> 
+
   <style>
+    :root {
+      --accent: #475569;
+    }
+
     body {
-      padding: 20px;
-      font-family: Arial, sans-serif;
-      background: #f1f5f9;
+      /* Added extra padding for mobile breathing room */
+      padding-top: 100px; 
+      background: #f8fafc;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    /* FIX: Navbar spans full width and stays on TOP during scroll */
+    #topnavContainer {
+      width: 100%;
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 9999; /* Higher than card and loader */
     }
 
     .profile-card {
-      max-width: 360px;
-      margin: auto;
-      padding: 20px;
-      border-radius: 16px;
-      background: #fff;
-      box-shadow: 0 10px 30px rgba(0,0,0,.08);
+      width: 90%;
+      max-width: 420px;
+      margin: 20px auto 60px auto; /* Margin bottom for mobile scroll space */
+      padding: 30px;
+      border-radius: 24px;
+      background: #ffffff;
+      box-shadow: 0 15px 35px rgba(0,0,0,.04);
       text-align: center;
+      box-sizing: border-box; /* Ensures internal alignment is perfect */
     }
 
-    .avatar-wrap {
-      position: relative;
-      width: 120px;
-      height: 120px;
-      margin: auto;
-    }
-
-    .avatar-wrap img {
-      width: 100%;
-      height: 100%;
+    .avatar-large {
+      width: 100px;
+      height: 100px;
       border-radius: 50%;
       object-fit: cover;
-      border: 2px solid #ddd;
+      border: 4px solid #fff;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+      margin-bottom: 20px;
     }
 
-    .avatar-add {
-      position: absolute;
-      bottom: 6px;
-      right: 6px;
-      width: 28px;
-      height: 28px;
-      border-radius: 50%;
-      background: #000;
-      color: #fff;
-      font-size: 18px;
-      line-height: 26px;
-      cursor: pointer;
+    h3 {
+      margin: 0;
+      font-size: 1.4rem;
+      color: #1e293b;
+      font-weight: 700;
     }
 
-    input[type="file"] { display: none; }
-
-    input, button {
-      margin-top: 14px;
-      width: 100%;
-      padding: 10px;
+    #userEmail {
+      margin: 8px 0 25px 0;
       font-size: 14px;
+      color: #64748b;
+      word-break: break-all; /* Prevents long emails from breaking mobile layout */
     }
 
-    button {
+    /* Alignment Box: Locks inputs and buttons to the same width */
+    .alignment-box {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      text-align: left;
+    }
+
+    .form-group label {
+      font-size: 12px;
+      font-weight: 600;
+      color: #334155;
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    input#displayName {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      font-size: 15px;
+      box-sizing: border-box; /* Fixes alignment overflow */
+      transition: border-color 0.2s;
+    }
+
+    .btn-save {
+      width: 100%;
+      padding: 14px;
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 600;
       cursor: pointer;
     }
 
-    button:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
+    hr {
+      border: 0;
+      border-top: 1px solid #f1f5f9;
+      margin: 10px 0;
     }
 
-    .loader {
-      width: 28px;
-      height: 28px;
-      border: 3px solid #ddd;
-      border-top: 3px solid #000;
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-      margin: 12px auto;
-      display: none;
+    .secondary-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
     }
 
-    @keyframes spin {
-      to { transform: rotate(360deg); }
+    .btn-secondary {
+      width: 100%;
+      padding: 12px;
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      color: #64748b;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      box-sizing: border-box;
+    }
+
+    .btn-logout {
+      color: #ef4444;
+      border-color: #fee2e2;
+    }
+
+    /* Mobile specific adjustments */
+    @media (max-width: 480px) {
+      .profile-card {
+        padding: 20px;
+      }
+      body {
+        padding-top: 90px;
+      }
     }
   </style>
 </head>
-
 <body>
-<div id="topnavContainer"></div>
 
-<div id="profileLoader" class="loader" style="display:none;">
-  Loading...
-</div>
+  <div id="topnavContainer"></div>
 
-<div class="profile-card">
-  <h3>Account</h3>
+  <div class="profile-card">
+    <img id="avatarImg" class="avatar-large" src="https://ui-avatars.com/api/?name=User" alt="Avatar">
+    <h3 id="userDisplayName">User</h3>
+    <p id="userEmail">user@email.com</p>
 
-  <div class="avatar-wrap">
-    <img id="avatarImg"
-      src="data:image/svg+xml;utf8,
-      <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
-        <circle cx='50' cy='35' r='18' fill='%23cbd5e1'/>
-        <rect x='18' y='60' width='64' height='35' rx='18' fill='%23cbd5e1'/>
-      </svg>">
-    <div class="avatar-add" onclick="pickImage()">+</div>
+    <div class="alignment-box">
+      <div class="form-group">
+        <label>Display Name</label>
+        <input type="text" id="displayName" placeholder="Enter name">
+      </div>
+
+      <button class="btn-save" onclick="saveProfile()">Save Changes</button>
+      
+      <hr>
+
+      <div class="secondary-actions">
+        <button class="btn-secondary" onclick="goChangePassword()">Change Password</button>
+        <button class="btn-secondary btn-logout" onclick="logout()">Logout</button>
+      </div>
+    </div>
   </div>
 
-  <div id="profileLoader" class="loader"></div>
-
-  <input type="file" id="avatarInput" accept="image/png,image/jpeg,image/webp">
-
-  <input id="nameInput" placeholder="Your name">
-  <button onclick="saveName()">Save Name</button>
-
-  <hr>
-
-  <button onclick="location.href='login.html'">Change Password</button>
-  <button onclick="logout()">Logout</button>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="/js/supabaseClient.js"></script>
-
-<script>
-const sb = window.supabaseClient;
-const loader = document.getElementById("profileLoader");
-
-const MAX_SIZE_MB = 2;
-const ALLOWED_TYPES = ["image/png", "image/jpeg", "image/webp"];
-
-/* --------------------------
-   LOAD PROFILE
--------------------------- */
-async function loadProfile() {
-  loader.style.display = "block";
-
-  const { data: { session } } = await sb.auth.getSession();
-  if (!session) return location.href = "login.html";
-
-  nameInput.value = session.user.user_metadata?.name || "";
-
-  if (session.user.user_metadata?.avatar_path) {
-    const { data } = await sb.storage
-      .from("avatars")
-      .createSignedUrl(
-        session.user.user_metadata.avatar_path,
-        3600
-      );
-
-    if (data?.signedUrl) avatarImg.src = data.signedUrl;
-  }
-
-  loader.style.display = "none";
-}
-
-/* --------------------------
-   PICK IMAGE
--------------------------- */
-function pickImage() {
-  avatarInput.click();
-}
-
-/* --------------------------
-   UPLOAD AVATAR
--------------------------- */
-avatarInput.onchange = async () => {
-  const file = avatarInput.files[0];
-  if (!file) return;
-
-  if (!ALLOWED_TYPES.includes(file.type)) {
-    alert("Only PNG, JPG or WEBP allowed");
-    return;
-  }
-
-  if (file.size > MAX_SIZE_MB * 1024 * 1024) {
-    alert("Max size is 2MB");
-    return;
-  }
-
-  loader.style.display = "block";
-
-  const { data: { session } } = await sb.auth.getSession();
-  if (!session) return;
-
-  const ext = file.name.split(".").pop();
-  const path = `${session.user.id}.${ext}`;
-
-  const { error } = await sb.storage
-    .from("avatars")
-    .upload(path, file, { upsert: true });
-
-  if (error) {
-    alert(error.message);
-    loader.style.display = "none";
-    return;
-  }
-
-  await sb.auth.updateUser({
-    data: { avatar_path: path }
-  });
-
-  const { data } = await sb.storage
-    .from("avatars")
-    .createSignedUrl(path, 3600);
-
-  avatarImg.src = data.signedUrl;
-  loader.style.display = "none";
-};
-
-/* --------------------------
-   SAVE NAME
--------------------------- */
-async function saveName() {
-  const name = nameInput.value.trim();
-  if (!name) return alert("Name required");
-
-  loader.style.display = "block";
-  await sb.auth.updateUser({ data: { name } });
-  loader.style.display = "none";
-
-  alert("Profile updated");
-}
-
-/* --------------------------
-   LOGOUT
--------------------------- */
-async function logout() {
-  await sb.auth.signOut();
-  location.href = "login.html";
-}
-
-loadProfile();
-</script>
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <script src="/js/supabaseClient.js"></script>
+  <script src="/js/topnav.js"></script>
+  <script src="/js/profile.js" defer></script>
 
 </body>
 </html>

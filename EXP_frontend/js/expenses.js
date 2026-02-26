@@ -2,30 +2,6 @@ const sb = window.supabaseClient;
 const API = "http://127.0.0.1:8000";
 
 /* HELPERS */
-function showLoader(){
-    const l=document.getElementById("globalLoader");
-    if(l) l.style.display="flex";
-}
-function hideLoader(){
-    const l=document.getElementById("globalLoader");
-    if(l) l.style.display="none";
-}
-async function disableWhileLoading(btn,fn){
-    if(btn){
-        btn.disabled=true;
-        btn.dataset.originalText=btn.innerText;
-        btn.innerText="Loading...";
-    }
-    showLoader();
-    try{ await fn(); }
-    finally{
-        if(btn){
-            btn.disabled=false;
-            btn.innerText=btn.dataset.originalText||"Submit";
-        }
-        hideLoader();
-    }
-}
 async function requireLogin(){
     const {data:{session}}=await sb.auth.getSession();
     if(!session){ location.href="login.html"; return null; }
