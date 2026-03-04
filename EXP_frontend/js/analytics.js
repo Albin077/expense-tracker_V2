@@ -1,5 +1,5 @@
 const sb = window.supabaseClient;
-const API = "http://127.0.0.1:8000";
+const API = "https://expense-tracker-v2-koc5.onrender.com";
 
 // --- CLASSY SOLID PALETTE (High Visibility) ---
 const classyColors = {
