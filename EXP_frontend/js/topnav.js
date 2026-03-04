@@ -43,7 +43,7 @@ async function loadTopNav(pageKey) {
     /* ---------- NOT LOGGED IN ---------- */
     if (!session) {
       if (btn) {
-        btn.onclick = () => (location.href = "login.html");
+        btn.onclick = () => (location.href = "/html/login.html");
       }
       return;
     }
@@ -131,10 +131,10 @@ function closeProfileDropdown() {
 }
 
 function goToProfile() {
-  location.href = "profile.html";
+  location.href = "/html/profile.html";
 }
 
 async function logout() {
   await window.supabaseClient.auth.signOut();
-  location.href = "login.html";
+  location.href = "/html/login.html";
 }

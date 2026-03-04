@@ -65,7 +65,7 @@ async function login() {
       return;
     }
 
-    location.href = "home.html";
+    location.href = "/html/home.html";
   });
 }
 

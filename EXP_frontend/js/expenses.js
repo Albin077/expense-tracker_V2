@@ -4,7 +4,7 @@ const API = "https://expense-tracker-v2-koc5.onrender.com";
 /* HELPERS */
 async function requireLogin(){
     const {data:{session}}=await sb.auth.getSession();
-    if(!session){ location.href="login.html"; return null; }
+    if(!session){ location.href="/html/login.html"; return null; }
     return session;
 }
 

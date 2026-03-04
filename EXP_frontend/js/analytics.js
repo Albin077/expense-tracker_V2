@@ -36,7 +36,7 @@ if (window.Chart) {
 async function getHeaders() {
     const { data: { session } } = await sb.auth.getSession();
     if (!session) {
-        location.href = "login.html";
+        location.href = "/html/login.html";
         return null;
     }
     return { Authorization: `Bearer ${session.access_token}` };

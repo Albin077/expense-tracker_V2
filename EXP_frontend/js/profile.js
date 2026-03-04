@@ -4,7 +4,7 @@ const sb = window.supabaseClient;
 async function requireLogin() {
   const { data: { session } } = await sb.auth.getSession();
   if (!session) {
-    location.href = "login.html";
+    location.href = "/html/login.html";
     return null;
   }
   return session;
