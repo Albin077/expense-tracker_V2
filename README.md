@@ -1,75 +1,210 @@
-# ⌘ FINOVA — Personal Finance Intelligence
+# ⌘ FINOVA — Localhost Development Environment
 
-A full-stack financial management ecosystem designed to provide granular control over your economic life. **FINOVA** combines a high-performance **FastAPI** backend with a modular, **Vanilla JavaScript** frontend, all secured and powered by **Supabase**.
+This branch (`localhost`) is dedicated to running **FINOVA** entirely in a local development setup.
 
----
+It connects:
 
-## ✨ Features
+Browser (localhost:5500)  
+⬇  
+FastAPI Backend (127.0.0.1:8000)  
+⬇  
+Supabase PostgreSQL (Transaction Pooler – Port 6543)
 
-* **Smart Authentication**: Secure sign-in and sign-up powered by **Supabase Auth**.
-* **Persistent Login**: Automatically detects active browser sessions to bypass the login screen upon return.
-* **Dual-Stream Tracking**: Granular tracking for **Expenses** (with categories/accounts) and **Income** (by source).
-* **Universal Responsiveness**: "Mobile-First" architecture ensuring seamless alignment on smartphones and laptops.
-* **Dynamic UI**: Includes a native **Dark Mode** toggle and real-time insight badges for spending trends.
-* **Data Security**: Implements PostgreSQL **Row Level Security (RLS)** via Supabase.
-
----
-
-## 🏗 System Architecture
-
-
-
-### 1. Backend (EXP_backend)
-Handles data aggregation, business logic, and secured API routing.
-* Framework: FastAPI / Python.
-* Modular Routes: Separate logic for auth, expenses, income, and analytics.
-* Database: PostgreSQL hosted on Supabase.
-
-### 2. Frontend (EXP_frontend)
-A lightweight, modern workspace for managing records and viewing financial trends.
-* Core: HTML5, CSS3, ES6+ JavaScript.
-* State Management: Real-time communication via the Supabase client.
-* Styling: Modular CSS including base.css for layout and darkMode.css for themes.
+Supabase is used for:
+- Authentication (JWT verification)
+- PostgreSQL database
+- Storage (avatars)
+- Row Level Security (RLS)
 
 ---
 
-## 📂 Project Structure
+## 🧠 Local Architecture
 
-### Backend Organization
-EXP_backend/
-├── app/
-│   └── routes/         # API Endpoints (analytics.py, expenses.py, income.py)
-├── db.py               # Database connection logic
-├── main.py             # Application entry point
-└── requirements.txt    # Python dependencies
-
-### Frontend Organization
-EXP_frontend/
-├── css/                # base.css, darkMode.css, responsive.css, topnav.css
-├── html/               # analytics.html, expenses.html, income.html, home.html, profile.html
-├── js/                 # auth.js, expenses.js, income.js, supabaseClient.js, topnav.js
-└── README.md           # Documentation
+```
+Browser (5500)
+   ↓
+FastAPI (8000)
+   ↓
+Supabase DB (Pooler 6543)
+```
 
 ---
 
-## 🚀 Setup & Installation
+# 🏗 Backend Setup (EXP_backend)
 
-### 1. Backend Setup
-Navigate to the backend directory, install dependencies, and launch the API server.
+## 1️⃣ Create Virtual Environment
 
-$cd EXP_backend$ pip install -r requirements.txt
-$ uvicorn main:app --reload
+```bash
+cd EXP_backend
+python -m venv .venv
+.venv\Scripts\activate
+```
 
-### 2. Frontend Setup
-1. Navigate to EXP_frontend/js/.
-2. Open supabaseClient.js and provide your unique Supabase URL and Anon Key.
-3. Launch the application by opening html/login.html in your browser.
+## 2️⃣ Install Dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+## 3️⃣ Configure Environment Variables
+
+Create a `.env` file inside `EXP_backend/`
+
+```env
+DATABASE_URL=postgresql://postgres:YOUR_PASSWORD@aws-0-REGION.pooler.supabase.com:6543/postgres
+SUPABASE_URL=https://your-project-id.supabase.co
+SUPABASE_ANON_KEY=your-anon-key
+```
+
+⚠️ Important:
+- Use **Transaction Pooler (port 6543)**
+- Copy the full connection string directly from:
+  Supabase → Settings → Database → Connection String → Pooler
+- Do NOT manually type the password.
 
 ---
 
-## ⚙️ Logic & Session Flow
+## 4️⃣ Start FastAPI
 
-* Auto-Redirect: Upon launch, the system checks for a remembered session. If found, users are immediately moved to home.html.
-* Dummy Mode: Users may bypass login to view a "dummy" dashboard but are restricted from saving data until authenticated.
-* CRUD Operations: Full Create, Read, Update, and Delete functionality for all financial records across both Expense and Income modules.
-* Data Isolation: Powered by Supabase RLS, ensuring users can only query data linked to their specific user_id.
+```bash
+uvicorn app.main:app --reload
+```
+
+Backend runs at:
+
+```
+http://127.0.0.1:8000
+```
+
+---
+
+# 🌐 Frontend Setup (EXP_frontend)
+
+Inside:
+
+```
+EXP_frontend/js/supabaseClient.js
+```
+
+Ensure API is pointing to local backend:
+
+```javascript
+const API = "http://127.0.0.1:8000";
+```
+
+---
+
+## Start Local Static Server
+
+From inside `EXP_frontend/`:
+
+```bash
+python -m http.server 5500
+```
+
+Frontend runs at:
+
+```
+http://localhost:5500
+```
+
+---
+
+# 🔐 FastAPI CORS Configuration
+
+Ensure backend includes:
+
+```python
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5500",
+        "http://127.0.0.1:5500"
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+```
+
+Restart FastAPI after changes.
+
+---
+
+# 🔑 Supabase Dashboard Configuration (Local Auth)
+
+Go to:
+
+Supabase → Authentication → URL Configuration
+
+Set:
+
+## Site URL
+```
+http://localhost:5500
+```
+
+## Redirect URLs
+```
+http://localhost:5500
+http://localhost:5500/login.html
+```
+
+---
+
+# 📂 Branch Strategy
+
+## `localhost`
+- Local FastAPI backend
+- Supabase Transaction Pooler (6543)
+- Used for development & debugging
+- Safe database testing
+
+## `production`
+- Configured for deployed backend
+- Configured for deployed frontend
+- Uses production domain URLs
+- Deployment-ready environment
+
+Switch branches:
+
+```bash
+git checkout localhost
+```
+
+or
+
+```bash
+git checkout production
+```
+
+---
+
+# 🧪 Troubleshooting
+
+## 500 Internal Server Error
+Check FastAPI terminal logs.
+
+## CORS Error
+Ensure `allow_origins` matches frontend origin exactly.
+
+## SASL Authentication Failed
+Re-copy pooler connection string from Supabase.
+
+## Connection Timeout
+Ensure port 6543 is used (NOT 5432).
+
+---
+
+# 🎯 Purpose of This Branch
+
+This branch guarantees:
+
+- Stable local development
+- Clear separation from production
+- Safe database testing
+- Independent deployment pipeline
+
+---
+
+**FINOVA — Build. Test. Scale.**
