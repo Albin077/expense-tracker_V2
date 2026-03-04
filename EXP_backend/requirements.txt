@@ -10,3 +10,6 @@ psycopg2-binary
 pandas
 numpy
 fastapi-cache2
+python-jose[cryptography]
+passlib[bcrypt]
+bcrypt
