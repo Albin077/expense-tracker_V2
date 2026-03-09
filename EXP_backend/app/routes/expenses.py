@@ -1,9 +1,26 @@
 from fastapi import APIRouter, Depends
 from datetime import date
+from decimal import Decimal
+
 from app.auth import get_current_user
 from app.db import get_db
 
 router = APIRouter()
+
+
+# ------------------------------
+# Helper to convert DB rows
+# ------------------------------
+def format_expense(row):
+    return {
+        "id": row[0],
+        "expense_date": str(row[1]),
+        "category": row[2],
+        "amount": float(row[3]) if isinstance(row[3], Decimal) else row[3],
+        "comment": row[4],
+        "account": row[5],
+    }
+
 
 # ------------------------------
 # ADD EXPENSE
@@ -11,11 +28,13 @@ router = APIRouter()
 @router.post("/expenses")
 def add_expense(data: dict, user=Depends(get_current_user), db=Depends(get_db)):
     required = ["expense_date", "category", "amount"]
+
     for field in required:
         if not data.get(field):
             return {"error": f"{field} is required"}
 
     cur = db.cursor()
+
     cur.execute(
         """
         INSERT INTO expenses (expense_date, category, amount, comment, account, user_id)
@@ -30,7 +49,9 @@ def add_expense(data: dict, user=Depends(get_current_user), db=Depends(get_db)):
             user["sub"],
         ),
     )
+
     db.commit()
+
     return {"status": "expense added"}
 
 
@@ -48,6 +69,7 @@ def get_expenses(
     user=Depends(get_current_user),
     db=Depends(get_db),
 ):
+
     cur = db.cursor()
 
     sort_map = {
@@ -55,6 +77,7 @@ def get_expenses(
         "amount": "amount",
         "category": "category",
     }
+
     sort_column = sort_map.get(sort_by, "expense_date")
     order_sql = "ASC" if order.lower() == "asc" else "DESC"
 
@@ -63,18 +86,20 @@ def get_expenses(
         FROM expenses
         WHERE user_id = %s
     """
+
     params = [user["sub"]]
 
-    # FILTERS
+    # Month filter
     if month:
         query += " AND EXTRACT(MONTH FROM expense_date) = %s"
         params.append(month)
 
+    # Category filter
     if category:
         query += " AND category = %s"
         params.append(category)
 
-    # ⭐ SEARCH (account added)
+    # Search
     term = keyword or search
     if term:
         query += """
@@ -91,7 +116,10 @@ def get_expenses(
     query += f" ORDER BY {sort_column} {order_sql}"
 
     cur.execute(query, params)
-    return cur.fetchall()
+
+    rows = cur.fetchall()
+
+    return [format_expense(r) for r in rows]
 
 
 # ------------------------------
@@ -104,7 +132,9 @@ def update_expense(
     user=Depends(get_current_user),
     db=Depends(get_db),
 ):
+
     cur = db.cursor()
+
     cur.execute(
         """
         UPDATE expenses
@@ -125,7 +155,9 @@ def update_expense(
             user["sub"],
         ),
     )
+
     db.commit()
+
     return {"status": "expense updated"}
 
 
@@ -138,12 +170,16 @@ def delete_expense(
     user=Depends(get_current_user),
     db=Depends(get_db),
 ):
+
     cur = db.cursor()
+
     cur.execute(
         "DELETE FROM expenses WHERE id = %s AND user_id = %s",
         (expense_id, user["sub"]),
     )
+
     db.commit()
+
     return {"status": "expense deleted"}
 
 
@@ -152,6 +188,7 @@ def delete_expense(
 # ------------------------------
 @router.get("/expenses/spending-increase")
 def spending_increase(user=Depends(get_current_user), db=Depends(get_db)):
+
     cur = db.cursor()
 
     today = date.today()
@@ -160,6 +197,7 @@ def spending_increase(user=Depends(get_current_user), db=Depends(get_db)):
 
     prev_month = cur_month - 1
     prev_year = cur_year
+
     if prev_month == 0:
         prev_month = 12
         prev_year -= 1
@@ -193,12 +231,20 @@ def spending_increase(user=Depends(get_current_user), db=Depends(get_db)):
     rows = cur.fetchall()
 
     result = []
+
     for category, current, previous in rows:
+
+        current = float(current or 0)
+        previous = float(previous or 0)
+
         if previous > 0 and current > previous:
             percent = ((current - previous) / previous) * 100
-            result.append({
-                "category": category,
-                "percent": round(percent, 1),
-            })
+
+            result.append(
+                {
+                    "category": category,
+                    "percent": round(percent, 1),
+                }
+            )
 
     return result
