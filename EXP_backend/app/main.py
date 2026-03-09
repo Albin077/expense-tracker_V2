@@ -22,10 +22,7 @@ async def startup():
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5500",  # local development
-        "https://expense-tracker-v2-lyart.vercel.app"  # production frontend
-    ],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
