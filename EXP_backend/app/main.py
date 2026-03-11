@@ -22,7 +22,7 @@ async def startup():
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origin_regex=r"https://.*\.vercel\.app",
+    allow_origin_regex=r"https://expense-tracker-v2-we38-beowrvfzx-albinkv03-3198s-projects.vercel.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
