@@ -11,13 +11,17 @@ DATABASE_URL = os.getenv("SUPABASE_DB_URL")
 if not DATABASE_URL:
     raise RuntimeError("SUPABASE_DB_URL missing")
 
+
 def get_db():
+    conn = None
     try:
         conn = psycopg2.connect(
             DATABASE_URL,
-            sslmode="require",   # required for Supabase external connections
-            cursor_factory=RealDictCursor  # return rows as dictionaries
+            sslmode="require",
+            cursor_factory=RealDictCursor
         )
         yield conn
+
     finally:
-        conn.close()
+        if conn:
+            conn.close()

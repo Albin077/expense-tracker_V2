@@ -1,6 +1,5 @@
 from fastapi import APIRouter, Depends
 from datetime import date
-from decimal import Decimal
 
 from app.auth import get_current_user
 from app.db import get_db
@@ -9,16 +8,16 @@ router = APIRouter()
 
 
 # ------------------------------
-# Helper to convert DB rows
+# FORMAT EXPENSE ROW
 # ------------------------------
 def format_expense(row):
     return {
-        "id": row[0],
-        "expense_date": str(row[1]),
-        "category": row[2],
-        "amount": float(row[3]) if isinstance(row[3], Decimal) else row[3],
-        "comment": row[4],
-        "account": row[5],
+        "id": row["id"],
+        "expense_date": str(row["expense_date"]),
+        "category": row["category"],
+        "amount": float(row["amount"] or 0),
+        "comment": row.get("comment"),
+        "account": row.get("account"),
     }
 
 
@@ -27,6 +26,7 @@ def format_expense(row):
 # ------------------------------
 @router.post("/expenses")
 def add_expense(data: dict, user=Depends(get_current_user), db=Depends(get_db)):
+
     required = ["expense_date", "category", "amount"]
 
     for field in required:
@@ -51,6 +51,7 @@ def add_expense(data: dict, user=Depends(get_current_user), db=Depends(get_db)):
     )
 
     db.commit()
+    cur.close()
 
     return {"status": "expense added"}
 
@@ -99,7 +100,7 @@ def get_expenses(
         query += " AND category = %s"
         params.append(category)
 
-    # Search
+    # Search filter
     term = keyword or search
     if term:
         query += """
@@ -118,6 +119,7 @@ def get_expenses(
     cur.execute(query, params)
 
     rows = cur.fetchall()
+    cur.close()
 
     return [format_expense(r) for r in rows]
 
@@ -157,6 +159,7 @@ def update_expense(
     )
 
     db.commit()
+    cur.close()
 
     return {"status": "expense updated"}
 
@@ -179,6 +182,7 @@ def delete_expense(
     )
 
     db.commit()
+    cur.close()
 
     return {"status": "expense deleted"}
 
@@ -229,20 +233,22 @@ def spending_increase(user=Depends(get_current_user), db=Depends(get_db)):
     )
 
     rows = cur.fetchall()
+    cur.close()
 
     result = []
 
-    for category, current, previous in rows:
+    for r in rows:
 
-        current = float(current or 0)
-        previous = float(previous or 0)
+        current = float(r["current_total"] or 0)
+        previous = float(r["previous_total"] or 0)
 
         if previous > 0 and current > previous:
+
             percent = ((current - previous) / previous) * 100
 
             result.append(
                 {
-                    "category": category,
+                    "category": r["category"],
                     "percent": round(percent, 1),
                 }
             )
