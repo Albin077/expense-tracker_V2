@@ -11,7 +11,46 @@ async function requireLogin(){
     return session;
 }
 
-/* LOAD */
+/* CREATE FILTER UI */
+function createFilters(){
+    const bar = document.querySelector(".filter-bar");
+
+    bar.innerHTML = `
+        <select id="sortBy">
+            <option value="">Sort By</option>
+            <option value="expense_date">Date</option>
+            <option value="amount">Amount</option>
+            <option value="category">Category</option>
+        </select>
+
+        <select id="order">
+            <option value="desc">Desc</option>
+            <option value="asc">Asc</option>
+        </select>
+
+        <select id="month">
+            <option value="">All Months</option>
+            <option value="1">Jan</option>
+            <option value="2">Feb</option>
+            <option value="3">Mar</option>
+            <option value="4">Apr</option>
+            <option value="5">May</option>
+            <option value="6">Jun</option>
+            <option value="7">Jul</option>
+            <option value="8">Aug</option>
+            <option value="9">Sep</option>
+            <option value="10">Oct</option>
+            <option value="11">Nov</option>
+            <option value="12">Dec</option>
+        </select>
+
+        <input id="keyword" placeholder="Search category/comment">
+
+        <button onclick="applyFilters()">Apply</button>
+    `;
+}
+
+/* LOAD EXPENSES */
 async function loadExpenses(params={}){
     const session = await requireLogin();
     if(!session) return;
@@ -20,7 +59,7 @@ async function loadExpenses(params={}){
     const query = new URLSearchParams(params).toString();
 
     const res = await fetch(`${API}/expenses?${query}`,{
-        headers:{ Authorization:`Bearer ${session.access_token}` }
+        headers:{Authorization:`Bearer ${session.access_token}`}
     });
 
     const rows = await res.json();
@@ -47,6 +86,7 @@ async function loadExpenses(params={}){
         });
     }
 
+    /* ADD NEW ROW */
     const addRow = document.createElement("tr");
 
     addRow.innerHTML = `
@@ -139,7 +179,7 @@ async function deleteExpense(id){
 
         const res = await fetch(`${API}/expenses/${id}`,{
             method:"DELETE",
-            headers:{ Authorization:`Bearer ${session.access_token}` }
+            headers:{Authorization:`Bearer ${session.access_token}`}
         });
 
         if(res.ok){
@@ -154,7 +194,7 @@ async function loadSpendingIncreaseInsight(){
     const session = await requireLogin();
 
     const res = await fetch(`${API}/expenses/spending-increase`,{
-        headers:{ Authorization:`Bearer ${session.access_token}` }
+        headers:{Authorization:`Bearer ${session.access_token}`}
     });
 
     if(!res.ok) return;
@@ -166,16 +206,16 @@ async function loadSpendingIncreaseInsight(){
 
     el.innerHTML = data.length===0
         ? "No spending increase ✅"
-        : data.map(d => `${d.category} ↑ ${d.percent}%`).join(" | ");
+        : data.map(d=>`${d.category} ↑ ${d.percent}%`).join(" | ");
 }
 
-/* FILTERS + SORT */
+/* APPLY FILTERS */
 function applyFilters(){
     loadExpenses({
-        sort_by: sortBy.value,
-        order: order.value,
-        month: month.value,
-        search: keyword.value.trim()
+        sort_by:document.getElementById("sortBy").value,
+        order:document.getElementById("order").value,
+        month:document.getElementById("month").value,
+        search:document.getElementById("keyword").value.trim()
     });
 }
 
@@ -184,6 +224,8 @@ document.addEventListener("DOMContentLoaded", async ()=>{
 
     if(typeof loadTopNav==="function")
         await loadTopNav("expenses");
+
+    createFilters();
 
     await disableWhileLoading(null, async ()=>{
         await loadExpenses();
