@@ -70,18 +70,22 @@ function renderIncome() {
     let total = 0;
 
     incomeRows.forEach((r) => {
-        total += Number(r[3] || 0);
+
+        total += Number(r.amount || 0);
+
         const tr = document.createElement("tr");
+
         tr.innerHTML = `
-            <td><input type="date" id="date-${r[0]}" value="${r[1] ?? ""}"></td>
-            <td><input id="src-${r[0]}" value="${r[2] ?? ""}"></td>
-            <td><input type="number" id="amt-${r[0]}" value="${r[3] ?? ""}"></td>
-            <td><input id="com-${r[0]}" value="${r[4] ?? ""}"></td>
+            <td><input type="date" id="date-${r.id}" value="${r.income_date ?? ""}"></td>
+            <td><input id="src-${r.id}" value="${r.source ?? ""}"></td>
+            <td><input type="number" id="amt-${r.id}" value="${r.amount ?? ""}"></td>
+            <td><input id="com-${r.id}" value="${r.comment ?? ""}"></td>
             <td style="text-align: center; white-space: nowrap;">
-                <button class="action-btn" onclick="updateIncome(${r[0]})">💾</button>
-                <button class="action-btn" onclick="deleteIncome(${r[0]})">🗑</button>
+                <button class="action-btn" onclick="updateIncome(${r.id})">💾</button>
+                <button class="action-btn" onclick="deleteIncome(${r.id})">🗑</button>
             </td>
         `;
+
         tbody.appendChild(tr);
     });
 
@@ -90,6 +94,7 @@ function renderIncome() {
 
     const addRow = document.createElement("tr");
     addRow.style.background = "#fcfcfc";
+
     addRow.innerHTML = `
         <td><input type="date" id="new-inc-date"></td>
         <td><input id="new-inc-src" placeholder="Source..."></td>
@@ -99,6 +104,7 @@ function renderIncome() {
             <button class="action-btn" onclick="addIncome()" style="color: #16a34a;">➕</button>
         </td>
     `;
+
     tbody.appendChild(addRow);
 }
 
