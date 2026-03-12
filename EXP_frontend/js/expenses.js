@@ -4,7 +4,10 @@ const API = "https://expense-tracker-v2-koc5.onrender.com";
 /* HELPERS */
 async function requireLogin(){
     const {data:{session}} = await sb.auth.getSession();
-    if(!session){ location.href="/html/login.html"; return null; }
+    if(!session){
+        location.href="/html/login.html";
+        return null;
+    }
     return session;
 }
 
@@ -17,7 +20,7 @@ async function loadExpenses(params={}){
     const query = new URLSearchParams(params).toString();
 
     const res = await fetch(`${API}/expenses?${query}`,{
-        headers:{Authorization:`Bearer ${session.access_token}`}
+        headers:{ Authorization:`Bearer ${session.access_token}` }
     });
 
     const rows = await res.json();
@@ -45,6 +48,7 @@ async function loadExpenses(params={}){
     }
 
     const addRow = document.createElement("tr");
+
     addRow.innerHTML = `
         <td><input type="date" id="new-exp-date"></td>
         <td><input id="new-exp-cat"></td>
@@ -135,7 +139,7 @@ async function deleteExpense(id){
 
         const res = await fetch(`${API}/expenses/${id}`,{
             method:"DELETE",
-            headers:{Authorization:`Bearer ${session.access_token}`}
+            headers:{ Authorization:`Bearer ${session.access_token}` }
         });
 
         if(res.ok){
@@ -150,30 +154,34 @@ async function loadSpendingIncreaseInsight(){
     const session = await requireLogin();
 
     const res = await fetch(`${API}/expenses/spending-increase`,{
-        headers:{Authorization:`Bearer ${session.access_token}`}
+        headers:{ Authorization:`Bearer ${session.access_token}` }
     });
 
     if(!res.ok) return;
 
     const data = await res.json();
     const el = document.getElementById("spendingIncrease");
+
     if(!el) return;
 
     el.innerHTML = data.length===0
         ? "No spending increase ✅"
-        : data.map(d=>`${d.category} ↑ ${d.percent}%`).join(" | ");
+        : data.map(d => `${d.category} ↑ ${d.percent}%`).join(" | ");
 }
 
+/* FILTERS + SORT */
 function applyFilters(){
     loadExpenses({
-        sort_by:sortBy.value,
-        order:order.value,
-        month:month.value,
-        search:keyword.value.trim()
+        sort_by: sortBy.value,
+        order: order.value,
+        month: month.value,
+        search: keyword.value.trim()
     });
 }
 
+/* PAGE LOAD */
 document.addEventListener("DOMContentLoaded", async ()=>{
+
     if(typeof loadTopNav==="function")
         await loadTopNav("expenses");
 
@@ -181,4 +189,5 @@ document.addEventListener("DOMContentLoaded", async ()=>{
         await loadExpenses();
         await loadSpendingIncreaseInsight();
     });
+
 });
