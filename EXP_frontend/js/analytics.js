@@ -358,88 +358,207 @@ async function loadAccountInsight(){
 async function loadIncomeExpenseInsight() {
     const headers = await getHeaders();
     if (!headers) return;
-    const year = new Date().getFullYear();
-    const month = new Date().getMonth();
+
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth();
+
     const res = await fetch(`${API}/analytics/chart/yearly-trend?year=${year}`, { headers });
     const data = await res.json();
+
+    const income = Number(data.income[month] || 0);
+    const expense = Number(data.expense[month] || 0);
+
     const el = document.getElementById("incomeExpenseText");
-    const diff = data.income[month] - data.expense[month];
-    
-    if (el) {
-        el.innerHTML = diff < 0 
-            ? `Expenses exceeded income by <span class="text-red">₹${Math.abs(diff)}</span>` 
-            : `Income exceeded expenses by <span class="text-green">₹${diff}</span>`;
+    if (!el) return;
+
+    if (expense > income) {
+        const diff = expense - income;
+        el.innerHTML = `Expenses exceeded income by <span class="text-red">₹${diff.toLocaleString()}</span>`;
+    } else {
+        const pct = income ? ((expense / income) * 100).toFixed(1) : 0;
+        el.innerHTML = `This month you used <span class="text-orange">${pct}%</span> of your income`;
     }
 }
 
 async function loadSpendingIncreaseInsight() {
     const headers = await getHeaders();
     if (!headers) return;
+
     const now = new Date();
     const curMonth = now.getMonth() + 1;
     const curYear = now.getFullYear();
+
     const prevMonth = curMonth === 1 ? 12 : curMonth - 1;
     const prevYear = curMonth === 1 ? curYear - 1 : curYear;
 
     const [curRes, prevRes] = await Promise.all([
         fetch(`${API}/analytics/chart/monthly-expense-category?month=${curMonth}&year=${curYear}`, { headers }),
-        fetch(`${API}/analytics/chart/monthly-expense-category?month=${prevMonth}&year=${prevYear}` , { headers })
+        fetch(`${API}/analytics/chart/monthly-expense-category?month=${prevMonth}&year=${prevYear}`, { headers })
     ]);
 
     const curData = await curRes.json();
     const prevData = await prevRes.json();
-    const prevMap = {};
-    prevData.labels.forEach((c, i) => { prevMap[c] = Number(prevData.data[i]); });
 
-    const increases = [];
+    const prevMap = {};
+    prevData.labels.forEach((c, i) => {
+        prevMap[c] = Number(prevData.data[i]);
+    });
+
+    const alerts = [];
+
     curData.labels.forEach((c, i) => {
-        if (prevMap.hasOwnProperty(c)) {
-            const prevAmount = prevMap[c];
-            const currAmount = Number(curData.data[i]);
-            if (currAmount > prevAmount && prevAmount > 0) {
-                const pct = ((currAmount - prevAmount) / prevAmount) * 100;
-                increases.push(`${c} ↑ ${pct.toFixed(1)}%`);
-            }
+        const currAmount = Number(curData.data[i]);
+        const prevAmount = prevMap[c];
+
+        if (prevAmount === undefined) {
+            alerts.push(`New expense category <b>${c}</b> added this month: ₹${currAmount}`);
+        }
+        else if (currAmount > prevAmount) {
+            const diff = currAmount - prevAmount;
+            alerts.push(`${c} ↑ ₹${diff} compared to last month`);
         }
     });
 
     const el = document.getElementById("spendingIncreaseText");
-    if (el) {
-        el.innerHTML = increases.length
-            ? increases.map(i => `<div class="negative text-red">${i} vs last month</div>`).join("")
-            : `<span style="color:#888">Stability maintained this month</span>`;
-    }
+
+    if (!el) return;
+
+    el.innerHTML = alerts.length
+        ? alerts.map(a => `<div class="negative text-red">${a}</div>`).join("")
+        : `<span style="color:#888">No unusual spending detected</span>`;
 }
 
 async function loadAvgExpenseTable() {
     const headers = await getHeaders();
     if (!headers) return;
-    const year = new Date().getFullYear();
-    const month = new Date().getMonth() + 1;
 
-    const [catRes, yearRes] = await Promise.all([
-        fetch(`${API}/analytics/chart/monthly-expense-category?month=${month}&year=${year}`, { headers }),
-        fetch(`${API}/analytics/chart/yearly-trend?year=${year}`, { headers })
-    ]);
+    const res = await fetch(`${API}/analytics/chart/yearly-trend?year=${new Date().getFullYear()}`, { headers });
+    const trend = await res.json();
 
+    const incomeAvg =
+        trend.income.reduce((a,b)=>a+Number(b||0),0) / trend.income.length;
+
+    const catRes = await fetch(`${API}/analytics/chart/monthly-expense-category?month=${new Date().getMonth()+1}&year=${new Date().getFullYear()}`, { headers });
     const catData = await catRes.json();
-    const yearData = await yearRes.json();
-    const income = yearData.income[new Date().getMonth()];
-    const tbody = document.getElementById("avgExpenseTable");
 
-    if (tbody) {
-        tbody.innerHTML = "";
-        catData.labels.forEach((cat, i) => {
-            const amt = catData.data[i];
-            const pct = income ? ((amt / income) * 100).toFixed(1) : 0;
-            tbody.innerHTML += `
-                <tr>
-                    <td>${cat}</td>
-                    <td>₹${amt}</td>
-                    <td>${pct}%</td>
-                </tr>`;
-        });
+    const tbody = document.getElementById("avgExpenseTable");
+    if (!tbody) return;
+
+    tbody.innerHTML = "";
+
+    catData.labels.forEach((cat, i) => {
+
+        const amount = Number(catData.data[i] || 0);
+        const avgMonth = amount;
+        const avgYear = amount * 12;
+
+        const pct = incomeAvg
+            ? ((avgMonth / incomeAvg) * 100).toFixed(1)
+            : 0;
+
+        tbody.innerHTML += `
+        <tr>
+            <td>${cat}</td>
+            <td>₹${avgMonth.toLocaleString()}</td>
+            <td>${pct}%</td>
+        </tr>`;
+    });
+}
+
+async function loadSavingsRate() {
+
+    const headers = await getHeaders();
+    if (!headers) return;
+
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth();
+
+    const res = await fetch(`${API}/analytics/chart/yearly-trend?year=${year}`, { headers });
+    const data = await res.json();
+
+    const income = Number(data.income[month] || 0);
+    const expense = Number(data.expense[month] || 0);
+
+    const savings = income - expense;
+    const rate = income ? ((savings / income) * 100).toFixed(1) : 0;
+
+    const el = document.getElementById("savingsRateText");
+
+    if (!el) return;
+
+    el.innerHTML = `
+        Saved <span class="text-green">₹${savings.toLocaleString()}</span>
+        (${rate}% of income)
+    `;
+}
+
+async function loadBiggestExpense() {
+
+    const headers = await getHeaders();
+    if (!headers) return;
+
+    const now = new Date();
+    const month = now.getMonth()+1;
+    const year = now.getFullYear();
+
+    const res = await fetch(`${API}/expenses?month=${month}&year=${year}`, { headers });
+    const data = await res.json();
+
+    if (!data.length) return;
+
+    let largest = data[0];
+
+    data.forEach(e => {
+        if (Number(e.amount) > Number(largest.amount)) {
+            largest = e;
+        }
+    });
+
+    const el = document.getElementById("largestExpenseText");
+
+    if (!el) return;
+
+    el.innerHTML =
+        `${largest.category} — <span class="text-red">₹${Number(largest.amount).toLocaleString()}</span>`;
+}
+
+async function loadFrequentCategory() {
+
+    const headers = await getHeaders();
+    if (!headers) return;
+
+    const now = new Date();
+    const month = now.getMonth()+1;
+    const year = now.getFullYear();
+
+    const res = await fetch(`${API}/expenses?month=${month}&year=${year}`, { headers });
+    const data = await res.json();
+
+    const count = {};
+
+    data.forEach(e => {
+        count[e.category] = (count[e.category] || 0) + 1;
+    });
+
+    let maxCat = null;
+    let maxCount = 0;
+
+    for (const c in count) {
+        if (count[c] > maxCount) {
+            maxCat = c;
+            maxCount = count[c];
+        }
     }
+
+    const el = document.getElementById("frequentCategoryText");
+
+    if (!el) return;
+
+    el.innerHTML = maxCat
+        ? `${maxCat} (${maxCount} transactions)`
+        : "No expenses recorded";
 }
 
 function setDefaultCategoryDates() {
@@ -479,13 +598,16 @@ document.addEventListener("DOMContentLoaded", async () => {
         
         // Parallel load for efficiency
         await Promise.all([
-            loadChart(),
-            loadCategoryChart(),
-            loadAccountCharts(),
-            loadIncomeExpenseInsight(),
-            loadSpendingIncreaseInsight(),
-            loadAvgExpenseTable()
-        ]);
+                loadChart(),
+                loadCategoryChart(),
+                loadAccountCharts(),
+                loadIncomeExpenseInsight(),
+                loadSavingsRate(),
+                loadSpendingIncreaseInsight(),
+                loadAvgExpenseTable(),
+                loadBiggestExpense(),
+                loadFrequentCategory()
+            ]);
     } catch (err) {
         console.error("Analytics Load Error:", err);
     } finally {

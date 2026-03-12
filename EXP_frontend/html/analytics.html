@@ -217,60 +217,66 @@
 
     <section class="insights-container">
 
-        <h2>Executive Summary</h2>
+<h2>Summary</h2>
 
-        <div class="insights-flex">
+<div class="insights-flex">
 
-            <div class="insight-tile">
+<div class="insight-tile">
+<h3>Monthly Status</h3>
+<p id="incomeExpenseText"></p>
+</div>
 
-                <h3>Monthly Status</h3>
+<div class="insight-tile">
+<h3>Savings Rate</h3>
+<p id="savingsRateText"></p>
+</div>
 
-                <p id="incomeExpenseText"></p>
+<div class="insight-tile">
+<h3>Spending Alerts</h3>
+<div id="spendingIncreaseText"></div>
+</div>
 
-            </div>
+<div class="insight-tile">
+<h3>Biggest Expense</h3>
+<p id="largestExpenseText"></p>
+</div>
 
-            <div class="insight-tile">
+<div class="insight-tile">
+<h3>Most Frequent Category</h3>
+<p id="frequentCategoryText"></p>
+</div>
 
-                <h3>Spending Alerts</h3>
+<div class="insight-tile wide">
 
-                <div id="spendingIncreaseText"></div>
+<h3>Category Distribution</h3>
 
-            </div>
+<div class="overflow-table">
 
-            <div class="insight-tile wide">
+<table class="classic-dark-table">
 
-                <h3>Category Distribution</h3>
+<thead>
+<tr>
+<th>Category</th>
+<th>Avg Monthly</th>
+<th>% of Avg Income</th>
+</tr>
+</thead>
 
-                <div class="overflow-table">
+<tbody id="avgExpenseTable"></tbody>
 
-                    <table class="classic-dark-table">
-
-                        <thead>
-
-                            <tr><th>Category</th><th>Amount</th><th>% of Income</th></tr>
-
-                        </thead>
-
-                        <tbody id="avgExpenseTable"></tbody>
-
-                    </table>
-
-                </div>
-
-            </div>
-
-        </div>
-
-    </section>
+</table>
 
 </div>
 
+</div>
 
+</div>
+
+</section>
+
+</div>
 
 <script src="/js/analytics.js"></script>
 
-
-
 </body>
-
 </html>
