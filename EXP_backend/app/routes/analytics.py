@@ -3,9 +3,6 @@ from datetime import date
 from app.auth import get_current_user
 from app.db import get_db
 from fastapi_cache.decorator import cache
-from datetime import date
-from fastapi import Query
-
 
 router = APIRouter(prefix="/analytics")
 
@@ -22,16 +19,16 @@ def analytics_summary(
     cur = db.cursor()
 
     cur.execute(
-        "SELECT COALESCE(SUM(amount), 0) FROM expenses WHERE user_id = %s",
+        "SELECT COALESCE(SUM(amount), 0) AS total FROM expenses WHERE user_id = %s",
         (user["sub"],),
     )
-    total_expense = cur.fetchone()[0]
+    total_expense = cur.fetchone()["total"]
 
     cur.execute(
-        "SELECT COALESCE(SUM(amount), 0) FROM income WHERE user_id = %s",
+        "SELECT COALESCE(SUM(amount), 0) AS total FROM income WHERE user_id = %s",
         (user["sub"],),
     )
-    total_income = cur.fetchone()[0]
+    total_income = cur.fetchone()["total"]
 
     return {
         "total_expense": total_expense,
@@ -57,7 +54,7 @@ def analytics_search(
     cur = db.cursor()
 
     query = """
-        SELECT category, COALESCE(SUM(amount), 0)
+        SELECT category, COALESCE(SUM(amount), 0) AS total
         FROM expenses
         WHERE user_id = %s
           AND comment ILIKE %s
@@ -76,7 +73,7 @@ def analytics_search(
     cur.execute(query, tuple(params))
     rows = cur.fetchall()
 
-    return [{"category": c, "total": t} for c, t in rows]
+    return [{"category": r["category"], "total": r["total"]} for r in rows]
 
 
 # -------------------------------------------------
@@ -95,10 +92,9 @@ def analytics_monthly(
     start = date(year, month, 1)
     end = date(year + 1, 1, 1) if month == 12 else date(year, month + 1, 1)
 
-    # Expenses by category
     cur.execute(
         """
-        SELECT category, SUM(amount)
+        SELECT category, SUM(amount) AS total
         FROM expenses
         WHERE user_id = %s
           AND expense_date >= %s
@@ -110,10 +106,9 @@ def analytics_monthly(
     )
     expenses = cur.fetchall()
 
-    # Total income
     cur.execute(
         """
-        SELECT COALESCE(SUM(amount), 0)
+        SELECT COALESCE(SUM(amount), 0) AS total
         FROM income
         WHERE user_id = %s
           AND income_date >= %s
@@ -121,13 +116,13 @@ def analytics_monthly(
         """,
         (user["sub"], start, end),
     )
-    income = cur.fetchone()[0]
+    income = cur.fetchone()["total"]
 
     return {
         "month": month,
         "year": year,
         "total_income": income,
-        "expenses": [{"category": c, "total": t} for c, t in expenses],
+        "expenses": [{"category": r["category"], "total": r["total"]} for r in expenses],
     }
 
 
@@ -148,7 +143,7 @@ def analytics_yearly(
 
     cur.execute(
         """
-        SELECT COALESCE(SUM(amount), 0)
+        SELECT COALESCE(SUM(amount), 0) AS total
         FROM expenses
         WHERE user_id = %s
           AND expense_date >= %s
@@ -156,11 +151,11 @@ def analytics_yearly(
         """,
         (user["sub"], start, end),
     )
-    expense = cur.fetchone()[0]
+    expense = cur.fetchone()["total"]
 
     cur.execute(
         """
-        SELECT COALESCE(SUM(amount), 0)
+        SELECT COALESCE(SUM(amount), 0) AS total
         FROM income
         WHERE user_id = %s
           AND income_date >= %s
@@ -168,7 +163,7 @@ def analytics_yearly(
         """,
         (user["sub"], start, end),
     )
-    income = cur.fetchone()[0]
+    income = cur.fetchone()["total"]
 
     return {
         "year": year,
@@ -194,7 +189,7 @@ def analytics_trend(
 
     cur.execute(
         """
-        SELECT EXTRACT(MONTH FROM expense_date)::int, SUM(amount)
+        SELECT EXTRACT(MONTH FROM expense_date)::int AS month, SUM(amount) AS total
         FROM expenses
         WHERE user_id = %s
           AND expense_date >= %s
@@ -208,7 +203,7 @@ def analytics_trend(
 
     cur.execute(
         """
-        SELECT EXTRACT(MONTH FROM income_date)::int, SUM(amount)
+        SELECT EXTRACT(MONTH FROM income_date)::int AS month, SUM(amount) AS total
         FROM income
         WHERE user_id = %s
           AND income_date >= %s
@@ -222,13 +217,13 @@ def analytics_trend(
 
     return {
         "year": year,
-        "expenses": [{"month": m, "total": t} for m, t in expenses],
-        "income": [{"month": m, "total": t} for m, t in income],
+        "expenses": [{"month": r["month"], "total": r["total"]} for r in expenses],
+        "income": [{"month": r["month"], "total": r["total"]} for r in income],
     }
 
 
 # -------------------------------------------------
-# CATEGORY YEARLY TREND (PETROL ETC.)
+# CATEGORY YEARLY TREND
 # -------------------------------------------------
 @router.get("/category-trend")
 def category_yearly_trend(
@@ -244,7 +239,7 @@ def category_yearly_trend(
 
     cur.execute(
         """
-        SELECT EXTRACT(MONTH FROM expense_date)::int, SUM(amount)
+        SELECT EXTRACT(MONTH FROM expense_date)::int AS month, SUM(amount) AS total
         FROM expenses
         WHERE user_id = %s
           AND category ILIKE %s
@@ -260,14 +255,15 @@ def category_yearly_trend(
     return {
         "category": category,
         "year": year,
-        "monthly": [{"month": m, "total": t} for m, t in rows],
+        "monthly": [{"month": r["month"], "total": r["total"]} for r in rows],
     }
+
 
 # =================================================
 # CHART CONTRACTS (DO NOT BREAK EXISTING APIs)
 # =================================================
 
-# 1️⃣ Monthly Income vs Expense (Chart-ready)
+# 1️⃣ Monthly Income vs Expense
 @router.get("/chart/monthly-summary")
 def chart_monthly_summary(
     month: int = Query(..., ge=1, le=12),
@@ -282,7 +278,7 @@ def chart_monthly_summary(
 
     cur.execute(
         """
-        SELECT COALESCE(SUM(amount),0)
+        SELECT COALESCE(SUM(amount),0) AS total
         FROM income
         WHERE user_id=%s
           AND income_date >= %s
@@ -290,11 +286,11 @@ def chart_monthly_summary(
         """,
         (user["sub"], start_date, end_date),
     )
-    income = cur.fetchone()[0]
+    income = cur.fetchone()["total"]
 
     cur.execute(
         """
-        SELECT COALESCE(SUM(amount),0)
+        SELECT COALESCE(SUM(amount),0) AS total
         FROM expenses
         WHERE user_id=%s
           AND expense_date >= %s
@@ -302,7 +298,7 @@ def chart_monthly_summary(
         """,
         (user["sub"], start_date, end_date),
     )
-    expense = cur.fetchone()[0]
+    expense = cur.fetchone()["total"]
 
     return {
         "labels": ["Income", "Expense"],
@@ -313,7 +309,7 @@ def chart_monthly_summary(
     }
 
 
-# 2️⃣ Monthly Expense by Category (Pie chart)
+# 2️⃣ Monthly Expense by Category
 @router.get("/chart/monthly-expense-category")
 def chart_monthly_expense_category(
     month: int = Query(..., ge=1, le=12),
@@ -328,7 +324,7 @@ def chart_monthly_expense_category(
 
     cur.execute(
         """
-        SELECT category, SUM(amount)
+        SELECT category, SUM(amount) AS total
         FROM expenses
         WHERE user_id=%s
           AND expense_date >= %s
@@ -342,9 +338,11 @@ def chart_monthly_expense_category(
     rows = cur.fetchall()
 
     return {
-        "labels": [r[0] for r in rows],
-        "data": [r[1] for r in rows],
+        "labels": [r["category"] for r in rows],
+        "data": [r["total"] for r in rows],
     }
+
+
 @router.get("/chart/expense-category-range")
 def expense_category_range(
     from_date: date = Query(...),
@@ -356,7 +354,7 @@ def expense_category_range(
 
     cur.execute(
         """
-        SELECT category, COALESCE(SUM(amount), 0)
+        SELECT category, COALESCE(SUM(amount), 0) AS total
         FROM expenses
         WHERE user_id = %s
           AND expense_date >= %s
@@ -370,11 +368,10 @@ def expense_category_range(
     rows = cur.fetchall()
 
     return {
-        "labels": [r[0] for r in rows],
-        "data": [r[1] for r in rows],
+        "labels": [r["category"] for r in rows],
+        "data": [r["total"] for r in rows],
     }
-
-
+# --------------------------------------------------------------------------------------------------------
 
 # 3️⃣ Yearly Trend (Income vs Expense line chart)
 @router.get("/chart/yearly-trend")
@@ -390,27 +387,27 @@ def chart_yearly_trend(
 
     cur.execute(
         """
-        SELECT EXTRACT(MONTH FROM income_date)::int, SUM(amount)
+        SELECT EXTRACT(MONTH FROM income_date)::int AS month, SUM(amount) AS total
         FROM income
         WHERE user_id=%s AND income_date >= %s AND income_date < %s
         GROUP BY 1
         """,
         (user["sub"], date(year, 1, 1), date(year + 1, 1, 1)),
     )
-    for m, t in cur.fetchall():
-        income[m - 1] = t
+    for r in cur.fetchall():
+        income[r["month"] - 1] = r["total"]
 
     cur.execute(
         """
-        SELECT EXTRACT(MONTH FROM expense_date)::int, SUM(amount)
+        SELECT EXTRACT(MONTH FROM expense_date)::int AS month, SUM(amount) AS total
         FROM expenses
         WHERE user_id=%s AND expense_date >= %s AND expense_date < %s
         GROUP BY 1
         """,
         (user["sub"], date(year, 1, 1), date(year + 1, 1, 1)),
     )
-    for m, t in cur.fetchall():
-        expense[m - 1] = t
+    for r in cur.fetchall():
+        expense[r["month"] - 1] = r["total"]
 
     return {
         "labels": ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"],
@@ -432,7 +429,7 @@ def chart_category_trend(
 
     cur.execute(
         """
-        SELECT EXTRACT(MONTH FROM expense_date)::int, SUM(amount)
+        SELECT EXTRACT(MONTH FROM expense_date)::int AS month, SUM(amount) AS total
         FROM expenses
         WHERE user_id=%s
           AND expense_date >= %s AND expense_date < %s
@@ -447,14 +444,15 @@ def chart_category_trend(
         ),
     )
 
-    for m, t in cur.fetchall():
-        monthly[m - 1] = t
+    for r in cur.fetchall():
+        monthly[r["month"] - 1] = r["total"]
 
     return {
         "labels": ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"],
         "data": monthly,
         "peak_month": monthly.index(max(monthly)) + 1 if max(monthly) > 0 else None,
     }
+
 
 @router.get("/chart/keyword-range-trend")
 def keyword_range_trend(
@@ -470,7 +468,7 @@ def keyword_range_trend(
         """
         SELECT
           DATE_TRUNC('month', expense_date)::date AS month,
-          SUM(amount)
+          SUM(amount) AS total
         FROM expenses
         WHERE user_id = %s
           AND expense_date >= %s
@@ -494,9 +492,10 @@ def keyword_range_trend(
     rows = cur.fetchall()
 
     return {
-        "labels": [r[0].strftime("%b %Y") for r in rows],
-        "data": [r[1] for r in rows],
+        "labels": [r["month"].strftime("%b %Y") for r in rows],
+        "data": [r["total"] for r in rows],
     }
+
 
 @router.get("/insights")
 def analytics_insights(
@@ -507,8 +506,8 @@ def analytics_insights(
 ):
     cur = db.cursor()
 
-    # ---------- date ranges ----------
     from datetime import date
+
     start = date(year, month, 1)
     end = date(year + 1, 1, 1) if month == 12 else date(year, month + 1, 1)
 
@@ -517,18 +516,17 @@ def analytics_insights(
     prev_start = date(prev_year, prev_month, 1)
     prev_end = date(prev_year + 1, 1, 1) if prev_month == 12 else date(prev_year, prev_month + 1, 1)
 
-    # ---------- income & expense ----------
     cur.execute(
-        "SELECT COALESCE(SUM(amount),0) FROM income WHERE user_id=%s AND income_date >= %s AND income_date < %s",
+        "SELECT COALESCE(SUM(amount),0) AS total FROM income WHERE user_id=%s AND income_date >= %s AND income_date < %s",
         (user["sub"], start, end),
     )
-    income = cur.fetchone()[0]
+    income = cur.fetchone()["total"]
 
     cur.execute(
-        "SELECT COALESCE(SUM(amount),0) FROM expenses WHERE user_id=%s AND expense_date >= %s AND expense_date < %s",
+        "SELECT COALESCE(SUM(amount),0) AS total FROM expenses WHERE user_id=%s AND expense_date >= %s AND expense_date < %s",
         (user["sub"], start, end),
     )
-    expense = cur.fetchone()[0]
+    expense = cur.fetchone()["total"]
 
     status_text = (
         f"Expenses exceeded income this month (Expense: {expense}, Income: {income})"
@@ -536,18 +534,18 @@ def analytics_insights(
         else f"Income exceeded expenses this month (Income: {income}, Expense: {expense})"
     )
 
-    # ---------- category comparison ----------
     def get_category_totals(s, e):
         cur.execute(
             """
-            SELECT category, SUM(amount)
+            SELECT category, SUM(amount) AS total
             FROM expenses
             WHERE user_id=%s AND expense_date >= %s AND expense_date < %s
             GROUP BY category
             """,
             (user["sub"], s, e),
         )
-        return dict(cur.fetchall())
+        rows = cur.fetchall()
+        return {r["category"]: r["total"] for r in rows}
 
     current = get_category_totals(start, end)
     previous = get_category_totals(prev_start, prev_end)
@@ -560,12 +558,8 @@ def analytics_insights(
             new_categories.append(cat)
         elif previous[cat] > 0 and val > previous[cat]:
             pct = round(((val - previous[cat]) / previous[cat]) * 100, 1)
-            increased.append({
-                "category": cat,
-                "percent": pct
-            })
+            increased.append({"category": cat, "percent": pct})
 
-    # ---------- average monthly (yearly) ----------
     cur.execute(
         """
         SELECT category, AVG(month_total)
@@ -583,7 +577,7 @@ def analytics_insights(
 
     cur.execute(
         """
-        SELECT AVG(month_total)
+        SELECT AVG(month_total) AS total
         FROM (
           SELECT DATE_TRUNC('month', income_date), SUM(amount) AS month_total
           FROM income
@@ -593,7 +587,7 @@ def analytics_insights(
         """,
         (user["sub"], date(year, 1, 1), date(year + 1, 1, 1)),
     )
-    avg_income = cur.fetchone()[0] or 1
+    avg_income = cur.fetchone()["total"] or 1
 
     avg_table = [
         {
@@ -610,11 +604,9 @@ def analytics_insights(
         "new_categories": new_categories,
         "avg_table": avg_table,
     }
-# =================================================
-# 💳 ACCOUNT ANALYTICS (ADDED — NO CHANGES ABOVE)
-# =================================================
 
-# Account distribution (Pie / Bar)
+
+# Account distribution
 @router.get("/chart/account-distribution")
 def chart_account_distribution(
     month: int = Query(..., ge=1, le=12),
@@ -629,7 +621,7 @@ def chart_account_distribution(
 
     cur.execute(
         """
-        SELECT COALESCE(account,'Unknown'), SUM(amount)
+        SELECT COALESCE(account,'Unknown') AS account, SUM(amount) AS total
         FROM expenses
         WHERE user_id=%s
           AND expense_date >= %s
@@ -643,12 +635,12 @@ def chart_account_distribution(
     rows = cur.fetchall()
 
     return {
-        "labels": [r[0] for r in rows],
-        "data": [r[1] for r in rows],
+        "labels": [r["account"] for r in rows],
+        "data": [r["total"] for r in rows],
     }
 
 
-# Account yearly trend (Line)
+# Account yearly trend
 @router.get("/chart/account-trend")
 def chart_account_trend(
     year: int = Query(...),
@@ -660,8 +652,8 @@ def chart_account_trend(
     cur.execute(
         """
         SELECT account,
-               EXTRACT(MONTH FROM expense_date)::int,
-               SUM(amount)
+               EXTRACT(MONTH FROM expense_date)::int AS month,
+               SUM(amount) AS total
         FROM expenses
         WHERE user_id=%s
           AND expense_date >= %s
@@ -674,11 +666,11 @@ def chart_account_trend(
 
     data = {}
 
-    for acc, m, t in cur.fetchall():
-        acc = acc or "Unknown"
+    for r in cur.fetchall():
+        acc = r["account"] or "Unknown"
         if acc not in data:
             data[acc] = [0] * 12
-        data[acc][m - 1] = t
+        data[acc][r["month"] - 1] = r["total"]
 
     return {
         "labels": ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"],
@@ -686,7 +678,7 @@ def chart_account_trend(
     }
 
 
-# Account insight (Credit vs Cash etc)
+# Account insight
 @router.get("/chart/account-insight")
 def account_insight(
     month: int = Query(..., ge=1, le=12),
@@ -701,7 +693,7 @@ def account_insight(
 
     cur.execute(
         """
-        SELECT account, SUM(amount)
+        SELECT account, SUM(amount) AS total
         FROM expenses
         WHERE user_id=%s
           AND expense_date >= %s
@@ -716,7 +708,7 @@ def account_insight(
 
     if len(rows) >= 2:
         return {
-            "text": f"{rows[0][0]} ₹{rows[0][1]} vs {rows[1][0]} ₹{rows[1][1]}"
+            "text": f"{rows[0]['account']} ₹{rows[0]['total']} vs {rows[1]['account']} ₹{rows[1]['total']}"
         }
 
     return {"text": "Not enough data"}
