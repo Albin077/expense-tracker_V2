@@ -65,37 +65,78 @@ function fillYears() {
     yearSelect.value = now;
 }
 
+function toggleCustomMonths() {
+
+    const range = document.getElementById("rangeSelect").value;
+    const box = document.getElementById("customMonthBox");
+
+    if (range === "custom") {
+        box.style.display = "block";
+    } else {
+        box.style.display = "none";
+    }
+
+}
+
 async function loadChart() {
+
     const headers = await getHeaders();
     if (!headers) return;
 
-    const res = await fetch(`${API}/analytics/chart/yearly-trend?year=${yearSelect.value}`, { headers });
+    const year = yearSelect.value;
+
+    const res = await fetch(`${API}/analytics/chart/yearly-trend?year=${year}`, { headers });
     const data = await res.json();
-    const range = parseInt(rangeSelect.value);
+
+    const range = rangeSelect.value;
+
+    let labels = [];
+    let income = [];
+    let expense = [];
+
+    if (range === "custom") {
+
+        const selected = [...document.getElementById("monthSelect").selectedOptions]
+            .map(o => Number(o.value));
+
+        selected.forEach(i => {
+            labels.push(data.labels[i]);
+            income.push(data.income[i]);
+            expense.push(data.expense[i]);
+        });
+
+    } else {
+
+        const r = parseInt(range);
+
+        labels = data.labels.slice(-r);
+        income = data.income.slice(-r);
+        expense = data.expense.slice(-r);
+
+    }
 
     safeDestroy(incomeExpenseChart);
 
     const ctx = document.getElementById("incomeExpenseChart").getContext('2d');
+
     incomeExpenseChart = new Chart(ctx, {
         type: typeSelect.value,
         data: {
-            labels: data.labels.slice(-range),
+            labels: labels,
             datasets: [
-                { 
-                    label: "Income", 
-                    data: data.income.slice(-range), 
-                    backgroundColor: classyColors.primary, 
-                    borderColor: classyColors.primary, 
-                    borderRadius: 8,
-                    tension: 0
+                {
+                    label: "Income",
+                    data: income,
+                    backgroundColor: classyColors.primary,
+                    borderColor: classyColors.primary,
+                    borderRadius: 8
                 },
-                { 
-                    label: "Expense", 
-                    data: data.expense.slice(-range), 
-                    backgroundColor: classyColors.secondary, 
-                    borderColor: classyColors.secondary, 
-                    borderRadius: 8,
-                    tension: 0
+                {
+                    label: "Expense",
+                    data: expense,
+                    backgroundColor: classyColors.secondary,
+                    borderColor: classyColors.secondary,
+                    borderRadius: 8
                 }
             ]
         },
@@ -108,8 +149,8 @@ async function loadChart() {
             }
         }
     });
-}
 
+}
 /* =========================
    CHART 2 — CATEGORY (Radar Fix)
 ========================= */
@@ -430,42 +471,72 @@ async function loadSpendingIncreaseInsight() {
 }
 
 async function loadAvgExpenseTable() {
+
     const headers = await getHeaders();
     if (!headers) return;
-
-    const res = await fetch(`${API}/analytics/chart/yearly-trend?year=${new Date().getFullYear()}`, { headers });
-    const trend = await res.json();
-
-    const incomeAvg =
-        trend.income.reduce((a,b)=>a+Number(b||0),0) / trend.income.length;
-
-    const catRes = await fetch(`${API}/analytics/chart/monthly-expense-category?month=${new Date().getMonth()+1}&year=${new Date().getFullYear()}`, { headers });
-    const catData = await catRes.json();
 
     const tbody = document.getElementById("avgExpenseTable");
     if (!tbody) return;
 
+    /* -------- load all expenses -------- */
+
+    const expRes = await fetch(`${API}/expenses`, { headers });
+    const expenses = await expRes.json();
+
+    if (!expenses.length) {
+        tbody.innerHTML = `<tr><td colspan="3">No data</td></tr>`;
+        return;
+    }
+
+    /* -------- find months range -------- */
+
+    const dates = expenses.map(e => new Date(e.expense_date));
+    const firstDate = new Date(Math.min(...dates));
+    const now = new Date();
+
+    const months =
+        (now.getFullYear() - firstDate.getFullYear()) * 12 +
+        (now.getMonth() - firstDate.getMonth()) + 1;
+
+    /* -------- group by category -------- */
+
+    const catTotals = {};
+
+    expenses.forEach(e => {
+        const cat = e.category || "Other";
+        const amt = Number(e.amount) || 0;
+
+        catTotals[cat] = (catTotals[cat] || 0) + amt;
+    });
+
+    /* -------- get average income -------- */
+
+    const year = now.getFullYear();
+    const trendRes = await fetch(`${API}/analytics/chart/yearly-trend?year=${year}`, { headers });
+    const trend = await trendRes.json();
+
+    const avgIncome =
+        trend.income.reduce((a,b)=>a+Number(b||0),0) / trend.income.length;
+
+    /* -------- build table -------- */
+
     tbody.innerHTML = "";
 
-    catData.labels.forEach((cat, i) => {
+    Object.entries(catTotals).forEach(([cat,total]) => {
 
-        const amount = Number(catData.data[i] || 0);
-        const avgMonth = amount;
-        const avgYear = amount * 12;
-
-        const pct = incomeAvg
-            ? ((avgMonth / incomeAvg) * 100).toFixed(1)
+        const avgMonth = total / months;
+        const pct = avgIncome
+            ? ((avgMonth / avgIncome) * 100).toFixed(1)
             : 0;
 
         tbody.innerHTML += `
         <tr>
             <td>${cat}</td>
-            <td>₹${avgMonth.toLocaleString()}</td>
+            <td>₹${avgMonth.toFixed(0)}</td>
             <td>${pct}%</td>
         </tr>`;
     });
 }
-
 async function loadSavingsRate() {
 
     const headers = await getHeaders();

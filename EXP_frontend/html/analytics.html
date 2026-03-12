@@ -55,30 +55,43 @@
 
         <div class="card-title">📊 Income vs Expense Trend</div>
 
-        <div class="controls-row">
+       <div class="controls-row">
 
-            <select id="yearSelect"></select>
+<select id="yearSelect" onchange="loadChart()"></select>
 
-            <select id="rangeSelect" onchange="loadChart()">
+<select id="rangeSelect" onchange="toggleCustomMonths(); loadChart();">
+<option value="12">Full Year</option>
+<option value="6">Last 6 Months</option>
+<option value="3">Last 3 Months</option>
+<option value="custom">Custom Months</option>
+</select>
 
-                <option value="12">Full Year</option>
+<select id="typeSelect" onchange="loadChart()">
+<option value="bar">Bar Chart</option>
+<option value="line">Line Chart</option>
+</select>
 
-                <option value="6">Last 6 Months</option>
+</div>
 
-                <option value="3">Last 3 Months</option>
+<!-- hidden by default -->
+<div id="customMonthBox" style="display:none; margin-top:10px">
 
-            </select>
+<select id="monthSelect" multiple size="4" onchange="loadChart()">
+<option value="0">January</option>
+<option value="1">February</option>
+<option value="2">March</option>
+<option value="3">April</option>
+<option value="4">May</option>
+<option value="5">June</option>
+<option value="6">July</option>
+<option value="7">August</option>
+<option value="8">September</option>
+<option value="9">October</option>
+<option value="10">November</option>
+<option value="11">December</option>
+</select>
 
-            <select id="typeSelect" onchange="loadChart()">
-
-                <option value="bar">Bar Chart</option>
-
-                <option value="line">Line Chart</option>
-
-            </select>
-
-        </div>
-
+</div>
         <div class="chart-wrapper">
 
             <canvas id="incomeExpenseChart"></canvas>
