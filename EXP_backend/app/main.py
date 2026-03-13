@@ -7,6 +7,8 @@ from app.auth import get_current_user
 from app.routes.expenses import router as expenses_router
 from app.routes.income import router as income_router
 from app.routes.analytics import router as analytics_router
+from app.routes.delete_account import router as delete_account_router
+
 
 
 app = FastAPI()
@@ -46,7 +48,7 @@ def root():
 app.include_router(expenses_router)
 app.include_router(income_router)
 app.include_router(analytics_router)
-
+app.include_router(delete_account_router)
 # ------------------------------
 # PROTECTED TEST
 # ------------------------------

@@ -135,6 +135,39 @@ async function logout() {
 }
 
 /* =========================
+   DELETE ACCOUNT
+========================= */
+async function deleteAccount() {
+
+  const ok = confirm(
+    "Are you sure you want to delete your account?\n\nAll your expenses, income, and profile data will be permanently deleted."
+  );
+
+  if (!ok) return;
+
+  const session = await requireLogin();
+  if (!session) return;
+
+  const token = session.access_token;
+
+  const res = await fetch(`${API}/delete-account`, {
+    method: "DELETE",
+    headers: {
+      "Authorization": `Bearer ${token}`
+    }
+  });
+
+  if (!res.ok) {
+    alert("Account deletion failed");
+    return;
+  }
+
+  alert("Your account has been deleted.");
+
+  await sb.auth.signOut();
+  location.href = "/html/login.html";
+}
+/* =========================
    INIT
 ========================= */
 document.addEventListener("DOMContentLoaded", () => {
