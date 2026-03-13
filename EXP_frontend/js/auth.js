@@ -54,7 +54,9 @@ function showChange() {
    LOGIN
 ===================== */
 async function login() {
+
   await disableWhileLoading(null, async () => {
+
     const { error } = await sb.auth.signInWithPassword({
       email: loginEmail.value,
       password: loginPassword.value
@@ -66,17 +68,24 @@ async function login() {
     }
 
     location.href = "/html/home.html";
+
   });
+
 }
 
 /* =====================
    SIGNUP
 ===================== */
 async function signup() {
+
   await disableWhileLoading(null, async () => {
+
     const { error } = await sb.auth.signUp({
       email: signupEmail.value,
-      password: signupPassword.value
+      password: signupPassword.value,
+      options: {
+        emailRedirectTo: window.location.origin + "/html/login.html"
+      }
     });
 
     if (error) {
@@ -85,7 +94,9 @@ async function signup() {
     }
 
     setStatus("Account created ✅ Check your email");
+
   });
+
 }
 
 /* =====================
@@ -93,7 +104,8 @@ async function signup() {
 ===================== */
 async function forgotPassword() {
 
-  if (window.location.hash.includes("type=recovery")) {
+  if (window.location.hash.includes("type=recovery") ||
+      window.location.search.includes("type=recovery")) {
     showChange();
     return;
   }
@@ -112,6 +124,7 @@ async function forgotPassword() {
   if (error) return alert(error.message);
 
   alert("Password reset email sent 📩");
+
 }
 
 /* =====================
@@ -126,6 +139,15 @@ async function changePassword() {
 
   if (newPassword.value !== confirmNewPassword.value) {
     alert("Passwords do not match");
+    return;
+  }
+
+  /* ensure recovery session exists */
+  const { data } = await sb.auth.getSession();
+
+  if (!data.session) {
+    alert("Password reset session expired. Please request reset again.");
+    showLogin();
     return;
   }
 
@@ -144,6 +166,7 @@ async function changePassword() {
   history.replaceState(null, null, window.location.pathname);
 
   showLogin();
+
 }
 
 /* =====================
@@ -176,7 +199,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   confirmNewPassword = document.getElementById("confirmNewPassword");
 
   /* ⭐ Recovery redirect detection */
-  if (window.location.hash.includes("type=recovery")) {
+  if (window.location.hash.includes("type=recovery") ||
+      window.location.search.includes("type=recovery")) {
     showChange();
     return;
   }
@@ -188,4 +212,5 @@ document.addEventListener("DOMContentLoaded", async () => {
   } else {
     showLogin();
   }
+
 });
