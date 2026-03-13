@@ -1,224 +1,302 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Profile - Finova</title>
-  
-  <link rel="stylesheet" href="/css/base.css">
-  <link rel="stylesheet" href="/css/topnav.css">
-  <link rel="stylesheet" href="/css/profiledropdown.css">
-  <link rel="stylesheet" href="/css/loader.css"> 
-  <link rel="stylesheet" href="/css/darkMode.css">
-  <script src="/js/darkMode.js" defer></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Profile - Finova</title>
 
-  <style>
-    :root {
-      --accent: #475569;
-    }
+<link rel="stylesheet" href="/css/base.css">
+<link rel="stylesheet" href="/css/topnav.css">
+<link rel="stylesheet" href="/css/profiledropdown.css">
+<link rel="stylesheet" href="/css/loader.css">
+<link rel="stylesheet" href="/css/darkMode.css">
 
-    body {
-      padding-top: 80px; 
-      background: #f8fafc;
-      margin: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      min-height: 100vh;
-      box-sizing: border-box;
-    }
+<script src="/js/darkMode.js" defer></script>
 
-    #topnavContainer {
-      width: 100%;
-      position: fixed;
-      top: 0;
-      left: 0;
-      z-index: 9999;
-    }
+<style>
 
-    .profile-card {
-      width: 90%;
-      max-width: 420px;
-      margin: 40px auto;
-      padding: 30px;
-      border-radius: 24px;
-      background: #ffffff;
-      box-shadow: 0 15px 35px rgba(0,0,0,.04);
-      text-align: center;
-      box-sizing: border-box;
-    }
+:root{
+  --accent:#475569;
+}
 
-    .avatar-large {
-      width: 100px;
-      height: 100px;
-      border-radius: 50%;
-      object-fit: cover;
-      border: 4px solid #fff;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-      margin-bottom: 15px;
-    }
+body{
+  padding-top:80px;
+  background:#f8fafc;
+  margin:0;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  min-height:100vh;
+  box-sizing:border-box;
+}
 
-    #userEmail {
-      margin: 5px 0 20px 0;
-      font-size: 14px;
-      color: #64748b;
-      word-break: break-all;
-    }
+#topnavContainer{
+  width:100%;
+  position:fixed;
+  top:0;
+  left:0;
+  z-index:9999;
+}
 
-    .alignment-box {
-      width: 100%;
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-      text-align: left;
-    }
+.profile-card{
+  width:90%;
+  max-width:420px;
+  margin:40px auto;
+  padding:30px;
+  border-radius:24px;
+  background:#ffffff;
+  box-shadow:0 15px 35px rgba(0,0,0,.04);
+  text-align:center;
+  box-sizing:border-box;
+}
 
-    .form-group {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
+/* Avatar */
 
-    /* Specific Row for Dark Mode to align toggle nicely */
-    .theme-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 10px 0;
-    }
+.avatar-wrapper{
+  position:relative;
+  display:inline-block;
+  cursor:pointer;
+}
 
-    .form-group label {
-      font-size: 12px;
-      font-weight: 600;
-      color: #334155;
-    }
+.avatar-large{
+  width:100px;
+  height:100px;
+  border-radius:50%;
+  object-fit:cover;
+  border:4px solid #fff;
+  box-shadow:0 4px 15px rgba(0,0,0,0.08);
+  margin-bottom:10px;
+}
 
-    input#displayName {
-      width: 100%;
-      padding: 12px;
-      border: 1px solid #e2e8f0;
-      border-radius: 12px;
-      font-size: 15px;
-      box-sizing: border-box;
-    }
+.avatar-overlay{
+  position:absolute;
+  bottom:6px;
+  right:6px;
+  width:28px;
+  height:28px;
+  background:#475569;
+  color:white;
+  font-size:18px;
+  font-weight:bold;
+  border-radius:50%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border:2px solid white;
+}
 
-    .btn-save {
-      width: 100%;
-      padding: 14px;
-      background: var(--accent);
-      color: white;
-      border: none;
-      border-radius: 12px;
-      font-size: 15px;
-      font-weight: 600;
-      cursor: pointer;
-    }
+/* Email */
 
-    hr {
-      border: 0;
-      border-top: 1px solid #f1f5f9;
-      margin: 5px 0;
-    }
+#userEmail{
+  margin:5px 0 20px 0;
+  font-size:14px;
+  color:#64748b;
+  word-break:break-all;
+}
 
-    .secondary-actions {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
+.alignment-box{
+  width:100%;
+  display:flex;
+  flex-direction:column;
+  gap:16px;
+  text-align:left;
+}
 
-    .btn-secondary {
-      width: 100%;
-      padding: 12px;
-      background: white;
-      border: 1px solid #e2e8f0;
-      border-radius: 12px;
-      color: #64748b;
-      font-size: 14px;
-      font-weight: 500;
-      cursor: pointer;
-    }
+.form-group{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+}
 
-    .btn-logout {
-      color: #ef4444;
-      border-color: #fee2e2;
-    }
+.theme-row{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:10px 0;
+}
 
-    /* Switch Styles */
-    .switch {
-      position: relative;
-      display: inline-block;
-      width: 46px;
-      height: 24px;
-    }
-    .switch input { opacity: 0; width: 0; height: 0; }
-    .slider {
-      position: absolute;
-      cursor: pointer;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background-color: #ccc;
-      transition: 0.3s;
-      border-radius: 24px;
-    }
-    .slider:before {
-      position: absolute;
-      content: "";
-      height: 18px;
-      width: 18px;
-      left: 3px;
-      bottom: 3px;
-      background-color: white;
-      transition: 0.3s;
-      border-radius: 50%;
-    }
-    input:checked + .slider { background-color: #475569; }
-    input:checked + .slider:before { transform: translateX(22px); }
+.form-group label{
+  font-size:12px;
+  font-weight:600;
+  color:#334155;
+}
 
-    @media (max-width: 480px) {
-      .profile-card { padding: 20px; }
-      body { padding-top: 70px; }
-    }
-  </style>
+input#displayName{
+  width:100%;
+  padding:12px;
+  border:1px solid #e2e8f0;
+  border-radius:12px;
+  font-size:15px;
+  box-sizing:border-box;
+}
+
+.btn-save{
+  width:100%;
+  padding:14px;
+  background:var(--accent);
+  color:white;
+  border:none;
+  border-radius:12px;
+  font-size:15px;
+  font-weight:600;
+  cursor:pointer;
+}
+
+hr{
+  border:0;
+  border-top:1px solid #f1f5f9;
+  margin:5px 0;
+}
+
+.secondary-actions{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+
+.btn-secondary{
+  width:100%;
+  padding:12px;
+  background:white;
+  border:1px solid #e2e8f0;
+  border-radius:12px;
+  color:#64748b;
+  font-size:14px;
+  font-weight:500;
+  cursor:pointer;
+}
+
+.btn-logout{
+  color:#ef4444;
+  border-color:#fee2e2;
+}
+
+/* Switch */
+
+.switch{
+  position:relative;
+  display:inline-block;
+  width:46px;
+  height:24px;
+}
+
+.switch input{
+  opacity:0;
+  width:0;
+  height:0;
+}
+
+.slider{
+  position:absolute;
+  cursor:pointer;
+  top:0;
+  left:0;
+  right:0;
+  bottom:0;
+  background-color:#ccc;
+  transition:0.3s;
+  border-radius:24px;
+}
+
+.slider:before{
+  position:absolute;
+  content:"";
+  height:18px;
+  width:18px;
+  left:3px;
+  bottom:3px;
+  background-color:white;
+  transition:0.3s;
+  border-radius:50%;
+}
+
+input:checked + .slider{
+  background-color:#475569;
+}
+
+input:checked + .slider:before{
+  transform:translateX(22px);
+}
+
+@media (max-width:480px){
+
+  .profile-card{
+    padding:20px;
+  }
+
+  body{
+    padding-top:70px;
+  }
+
+}
+
+</style>
 </head>
+
 <body>
 
-  <div id="topnavContainer"></div>
+<div id="topnavContainer"></div>
 
-  <div class="profile-card">
-    <img id="avatarImg" class="avatar-large" src="https://ui-avatars.com/api/?name=User" alt="Avatar">
-    <h3 id="userDisplayName">User</h3>
-    <p id="userEmail">user@email.com</p>
+<div class="profile-card">
 
-    <div class="alignment-box">
-      <div class="form-group">
-        <label>Display Name</label>
-        <input type="text" id="displayName" placeholder="Enter name">
-      </div>
+<!-- Avatar -->
 
-      
+<div class="avatar-wrapper" onclick="selectAvatar()">
 
-      <button class="btn-save" onclick="saveProfile()">Save Changes</button>
-      
-      <hr>
+<img
+id="avatarImg"
+class="avatar-large"
+src="https://ui-avatars.com/api/?name=User"
+alt="Avatar">
 
-      <div class="secondary-actions">
-        <button class="btn-secondary" onclick="goChangePassword()">Change Password</button>
-        <button class="btn-secondary btn-logout" onclick="logout()">Logout</button>
-      </div>
+<div class="avatar-overlay">+</div>
 
-      <div class="theme-row">
-        <label style="font-size: 12px; font-weight: 600; color: #334155;">Dark Mode</label>
-        <label class="switch">
-          <input type="checkbox" id="darkModeToggle">
-          <span class="slider"></span>
-        </label>
-      </div>
-    </div>
-  </div>
+<input
+type="file"
+id="avatarInput"
+accept="image/*"
+style="display:none">
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="/js/supabaseClient.js"></script>
-  <script src="/js/topnav.js"></script>
-  <script src="/js/profile.js" defer></script>
+</div>
+
+<h3 id="userDisplayName">User</h3>
+
+<p id="userEmail">user@email.com</p>
+
+<div class="alignment-box">
+
+<div class="form-group">
+<label>Display Name</label>
+<input type="text" id="displayName" placeholder="Enter name">
+</div>
+
+<button class="btn-save" onclick="saveProfile()">Save Changes</button>
+
+<hr>
+
+<div class="secondary-actions">
+<button class="btn-secondary" onclick="goChangePassword()">Change Password</button>
+<button class="btn-secondary btn-logout" onclick="logout()">Logout</button>
+</div>
+
+<div class="theme-row">
+<label style="font-size:12px;font-weight:600;color:#334155;">Dark Mode</label>
+
+<label class="switch">
+<input type="checkbox" id="darkModeToggle">
+<span class="slider"></span>
+</label>
+
+</div>
+
+</div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/js/supabaseClient.js"></script>
+<script src="/js/topnav.js"></script>
+<script src="/js/profile.js" defer></script>
 
 </body>
 </html>
