@@ -1,5 +1,6 @@
 /* /js/profile.js */
 const sb = window.supabaseClient;
+const API = "https://expense-tracker-v2-koc5.onrender.com";
 
 async function requireLogin() {
   const { data: { session } } = await sb.auth.getSession();
@@ -153,20 +154,23 @@ async function deleteAccount() {
   const res = await fetch(`${API}/delete-account`, {
     method: "DELETE",
     headers: {
-      "Authorization": `Bearer ${token}`
+      "Authorization": `Bearer ${token}`,
+      "Content-Type": "application/json"
     }
   });
 
   if (!res.ok) {
-    alert("Account deletion failed");
-    return;
-  }
+  const err = await res.json();
+  alert(err.error || "Account deletion failed");
+  return;
+}
 
   alert("Your account has been deleted.");
 
   await sb.auth.signOut();
   location.href = "/html/login.html";
 }
+
 /* =========================
    INIT
 ========================= */
