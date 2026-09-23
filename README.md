@@ -1,4 +1,3 @@
-```markdown
 # Expense Tracker – Production Deployment
 
 ## 📊 Web App
@@ -28,7 +27,7 @@ The application can provide insights such as:
 
 - Total expenses for a particular year or time period.
 - Total amount spent on a specific category.
-- Which category has the highest spending.
+- Which category has the highest expenses.
 - Yearly expenses broken down by category.
 - Spending for a particular category during a selected time period.
 - Distribution of expenses across different categories.
@@ -36,10 +35,10 @@ The application can provide insights such as:
 
 ### Architecture
 
-Frontend (Static HTML/CSS/JS)  
-⬇  
-FastAPI Backend (Uvicorn)  
-⬇  
+Frontend (Static HTML/CSS/JS)
+⬇
+FastAPI Backend (Uvicorn)
+⬇
 Supabase PostgreSQL Database
 
 
@@ -141,13 +140,13 @@ The backend connects to Supabase using the environment variables configured in R
 
 ## 🔗 Production Architecture
 
-Netlify  
-**Frontend (Static HTML/CSS/JS)**  
-⬇  
-Render  
-**FastAPI Backend (Uvicorn)**  
-⬇  
-Supabase  
+Netlify
+**Frontend (Static HTML/CSS/JS)**
+⬇
+Render
+**FastAPI Backend (Uvicorn)**
+⬇
+Supabase
 **PostgreSQL Database**
 
 
@@ -181,4 +180,3 @@ Supabase
 - [ ] Backend deployed successfully
 - [ ] Frontend API URL updated with the Render backend URL
 - [ ] No production credentials committed to GitHub
-```
