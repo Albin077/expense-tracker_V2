@@ -4,7 +4,7 @@
 
 ### Overview
 
-Expense Tracker is a web application designed to help users **track, organize, and understand their day-to-day expenses**.
+FINOVA is a web application designed to help users **track, organize, and understand their day-to-day expenses**.
 
 Users can freely add expenses with details such as the amount, category, description, and date. The application stores expense records and provides multiple insights to help users understand their spending patterns.
 
