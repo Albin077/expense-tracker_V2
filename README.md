@@ -1,6 +1,6 @@
 # Expense Tracker – Production Deployment
 
-## 📊 Web App
+## 📊 FINOVA (Web App)
 
 ### Overview
 
